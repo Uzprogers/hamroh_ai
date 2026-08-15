@@ -1,0 +1,133 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-ink text-paper font-sans antialiased;
+    background-image:
+      radial-gradient(900px 500px at 12% -10%, rgba(42, 213, 195, 0.16), transparent 60%),
+      radial-gradient(800px 480px at 92% 8%, rgba(85, 134, 253, 0.18), transparent 62%),
+      radial-gradient(700px 700px at 50% 120%, rgba(85, 134, 253, 0.1), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight;
+  }
+
+  ::selection {
+    background: rgba(42, 213, 195, 0.35);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1b2740;
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  .grid-floor {
+    background-image:
+      linear-gradient(rgba(148, 178, 255, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 178, 255, 0.06) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(circle at 50% 0%, black, transparent 78%);
+  }
+
+  .surface {
+    @apply relative rounded-2xl border border-edge/80 bg-panel/70 backdrop-blur-xl shadow-lift;
+  }
+
+  .surface::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), transparent 42%);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .tilt {
+    transform-style: preserve-3d;
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .tilt:hover {
+    transform: perspective(900px) rotateX(3deg) rotateY(-4deg) translateY(-3px);
+  }
+
+  .brand-text {
+    background: linear-gradient(100deg, #2ad5c3, #5586fd);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-display text-sm font-bold
+           transition-transform duration-200 active:scale-[.98] disabled:opacity-40 disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn text-ink;
+    background: linear-gradient(120deg, #2ad5c3, #5586fd);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.3) inset,
+      0 16px 34px -18px rgba(42, 213, 195, 0.9);
+  }
+
+  .btn-ghost {
+    @apply btn border border-edge bg-panel/60 text-paper hover:border-teal/50;
+  }
+
+  .field {
+    @apply w-full rounded-xl border border-edge bg-ink/70 px-4 py-3 text-paper placeholder:text-muted/70
+           outline-none transition focus:border-teal/70 focus:ring-4 focus:ring-teal/10;
+  }
+
+  .label {
+    @apply mb-2 block text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-edge bg-panel/70 px-3 py-1
+           text-xs font-semibold text-muted;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded-lg bg-edge/50;
+  }
+
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full animate-shimmer;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.09), transparent);
+  }
+}

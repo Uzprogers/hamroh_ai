@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.env.local
+logs/
+*.log
+.next/
+.turbo/
+key.json
+personal.key.json
+*.key.json
+.docs/
+.docs
+docs/
