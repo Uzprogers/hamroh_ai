@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Logo } from "./Logo";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "../lib/auth";
 import { useI18n } from "../i18n/i18n";
 
@@ -20,6 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <LanguageSwitcher />
           {user && (
             <div className="flex items-center gap-3">

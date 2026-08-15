@@ -3,6 +3,8 @@ import { AppShell } from "./components/AppShell";
 import { useAuth } from "./lib/auth";
 import { LoginPage } from "./features/auth/LoginPage";
 import { RegisterPage } from "./features/auth/RegisterPage";
+import { OnboardingPage } from "./features/auth/OnboardingPage";
+import { LandingPage } from "./features/landing/LandingPage";
 import { TeacherHome } from "./features/teacher/TeacherHome";
 import { LessonPage } from "./features/teacher/LessonPage";
 import { StudentHome } from "./features/student/StudentHome";
@@ -22,12 +24,20 @@ export function App() {
 
   if (!user) {
     return (
-      <AppShell>
-        <Routes>
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="*" element={<LoginPage />} />
-        </Routes>
-      </AppShell>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
+
+  if (!user.profile_completed || !user.role) {
+    return (
+      <Routes>
+        <Route path="*" element={<OnboardingPage />} />
+      </Routes>
     );
   }
 

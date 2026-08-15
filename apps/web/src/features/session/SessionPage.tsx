@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { io, type Socket } from "socket.io-client";
-import { Avatar3D } from "./Avatar3D";
+import { Orb } from "../../components/Orb";
 import { PanelCard, toolCardType, type PanelEntry } from "./PanelCard";
 import { MicRecorder, PcmPlayer } from "../../lib/audio";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
 import { Logo } from "../../components/Logo";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
+import { ThemeToggle } from "../../components/ThemeToggle";
 import type { PanelCard as PanelCardData } from "../../lib/types";
 
 const WS_URL = import.meta.env.VITE_WS_URL ?? "http://localhost:3001";
@@ -156,6 +157,7 @@ export function SessionPage() {
             />
             {stateLabel}
           </span>
+          <ThemeToggle />
           <LanguageSwitcher />
           {connected ? (
             <button type="button" className="chip hover:border-coral/50 hover:text-coral" onClick={disconnect}>
@@ -174,7 +176,7 @@ export function SessionPage() {
           <div className="pointer-events-none absolute inset-0 grid-floor opacity-60" />
 
           <div className="relative min-h-[220px] flex-1">
-            <Avatar3D level={level} state={state} />
+            <Orb level={level} state={state} />
           </div>
 
           <div className="relative shrink-0 px-6 pb-6">

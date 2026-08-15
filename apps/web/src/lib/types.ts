@@ -6,16 +6,36 @@ export type LessonStatus = "DRAFT" | "ACTIVE" | "CLOSED";
 export type AssignmentType = "WRITTEN" | "QUIZ" | "SPEAKING";
 export type Severity = "MINOR" | "MAJOR";
 
+export type AuthProvider = "LOCAL" | "GOOGLE" | "TELEGRAM";
+export type TelegramLoginStatus = "PENDING" | "APPROVED" | "EXPIRED";
+
 export interface User {
   id: string;
   first_name: string;
-  last_name: string;
-  phone: string;
-  role: Role;
-  institution_type: InstitutionType;
-  institution_name: string;
+  last_name: string | null;
+  phone: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  auth_provider: AuthProvider;
+  role: Role | null;
+  institution_type: InstitutionType | null;
+  institution_name: string | null;
   grade_level: string | null;
+  subject: string | null;
+  profile_completed: boolean;
   locale: Locale;
+}
+
+export interface TelegramSession {
+  code: string;
+  deep_link: string;
+  bot_username: string;
+  expires_at: string;
+}
+
+export interface TelegramSessionStatus {
+  status: TelegramLoginStatus;
+  auth: AuthResult | null;
 }
 
 export interface AuthResult {

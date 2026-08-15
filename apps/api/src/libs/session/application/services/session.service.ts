@@ -53,7 +53,7 @@ export class SessionService {
     return {
       id: profile.id,
       first_name: profile.first_name,
-      institution_name: profile.institution_name,
+      institution_name: profile.institution_name ?? "",
       grade_level: profile.grade_level,
       subjects: [...new Set(groups.map((g) => g.subject))],
       locale: profile.locale,

@@ -7,3 +7,15 @@ export enum InstitutionType {
   SCHOOL = "SCHOOL",
   UNIVERSITY = "UNIVERSITY",
 }
+
+export enum AuthProvider {
+  LOCAL = "LOCAL",
+  GOOGLE = "GOOGLE",
+  TELEGRAM = "TELEGRAM",
+}
+
+export enum TelegramLoginStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  EXPIRED = "EXPIRED",
+}

@@ -1,18 +1,19 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        ink: "#050914",
-        panel: "#0C1424",
-        edge: "#1B2740",
-        teal: "#2AD5C3",
-        azure: "#5586FD",
-        paper: "#EEF3FB",
-        muted: "#8397B5",
-        coral: "#FF6B5A",
-        amber: "#FFC24B",
+        ink: "rgb(var(--ink) / <alpha-value>)",
+        panel: "rgb(var(--panel) / <alpha-value>)",
+        edge: "rgb(var(--edge) / <alpha-value>)",
+        paper: "rgb(var(--paper) / <alpha-value>)",
+        muted: "rgb(var(--muted) / <alpha-value>)",
+        teal: "rgb(var(--teal) / <alpha-value>)",
+        azure: "rgb(var(--azure) / <alpha-value>)",
+        coral: "rgb(var(--coral) / <alpha-value>)",
+        amber: "rgb(var(--amber) / <alpha-value>)",
       },
       fontFamily: {
         display: ["'Plus Jakarta Sans'", "system-ui", "sans-serif"],
@@ -20,8 +21,8 @@ export default {
         mono: ["'JetBrains Mono'", "ui-monospace", "monospace"],
       },
       boxShadow: {
-        lift: "0 1px 0 rgba(255,255,255,.06) inset, 0 24px 48px -24px rgba(0,0,0,.9)",
-        glow: "0 0 60px -12px rgba(42,213,195,.45)",
+        lift: "var(--shadow-lift)",
+        glow: "0 0 60px -12px rgb(var(--teal) / 0.45)",
       },
       keyframes: {
         rise: {

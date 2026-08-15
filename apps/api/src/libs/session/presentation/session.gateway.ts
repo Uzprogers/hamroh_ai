@@ -28,7 +28,7 @@ interface LiveSession {
 
 @WebSocketGateway({
   namespace: "/session",
-  cors: { origin: env.server.webOrigin, credentials: true },
+  cors: { origin: env.server.webOrigins, credentials: true },
   maxHttpBufferSize: 5e6,
 })
 export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect {

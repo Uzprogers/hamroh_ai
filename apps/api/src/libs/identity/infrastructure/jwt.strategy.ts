@@ -6,12 +6,12 @@ import { Role } from "../config/identity.enums";
 
 export interface JwtPayload {
   sub: string;
-  role: Role;
+  role: Role | null;
 }
 
 export interface RequestUser {
   id: string;
-  role: Role;
+  role: Role | null;
 }
 
 @Injectable()

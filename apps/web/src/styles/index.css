@@ -6,7 +6,49 @@
 
 @layer base {
   :root {
+    --ink: 5 9 20;
+    --panel: 12 20 36;
+    --edge: 27 39 64;
+    --paper: 238 243 251;
+    --muted: 131 151 181;
+    --teal: 42 213 195;
+    --azure: 85 134 253;
+    --coral: 255 107 90;
+    --amber: 255 194 75;
+
+    --glow-a: 42 213 195;
+    --glow-b: 85 134 253;
+    --glow-strength: 0.16;
+    --grid-line: 148 178 255;
+    --grid-alpha: 0.06;
+    --sheen: 255 255 255;
+    --sheen-alpha: 0.14;
+    --shadow-lift: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 24px 48px -24px rgb(0 0 0 / 0.9);
+
     color-scheme: dark;
+  }
+
+  :root.light {
+    --ink: 243 246 252;
+    --panel: 255 255 255;
+    --edge: 214 225 241;
+    --paper: 11 22 42;
+    --muted: 92 112 143;
+    --teal: 10 150 136;
+    --azure: 42 92 220;
+    --coral: 214 60 46;
+    --amber: 176 118 12;
+
+    --glow-a: 42 213 195;
+    --glow-b: 85 134 253;
+    --glow-strength: 0.14;
+    --grid-line: 42 92 220;
+    --grid-alpha: 0.07;
+    --sheen: 255 255 255;
+    --sheen-alpha: 0.9;
+    --shadow-lift: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 18px 36px -22px rgb(18 38 78 / 0.35);
+
+    color-scheme: light;
   }
 
   html,
@@ -18,10 +60,13 @@
   body {
     @apply bg-ink text-paper font-sans antialiased;
     background-image:
-      radial-gradient(900px 500px at 12% -10%, rgba(42, 213, 195, 0.16), transparent 60%),
-      radial-gradient(800px 480px at 92% 8%, rgba(85, 134, 253, 0.18), transparent 62%),
-      radial-gradient(700px 700px at 50% 120%, rgba(85, 134, 253, 0.1), transparent 60%);
+      radial-gradient(900px 500px at 12% -10%, rgb(var(--glow-a) / var(--glow-strength)), transparent 60%),
+      radial-gradient(800px 480px at 92% 8%, rgb(var(--glow-b) / var(--glow-strength)), transparent 62%),
+      radial-gradient(700px 700px at 50% 120%, rgb(var(--glow-b) / calc(var(--glow-strength) * 0.6)), transparent 60%);
     background-attachment: fixed;
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
   }
 
   h1,
@@ -31,7 +76,7 @@
   }
 
   ::selection {
-    background: rgba(42, 213, 195, 0.35);
+    background: rgb(var(--teal) / 0.35);
   }
 
   ::-webkit-scrollbar {
@@ -39,7 +84,7 @@
     height: 10px;
   }
   ::-webkit-scrollbar-thumb {
-    background: #1b2740;
+    background: rgb(var(--edge));
     border-radius: 999px;
     border: 3px solid transparent;
     background-clip: content-box;
@@ -49,8 +94,8 @@
 @layer components {
   .grid-floor {
     background-image:
-      linear-gradient(rgba(148, 178, 255, 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(148, 178, 255, 0.06) 1px, transparent 1px);
+      linear-gradient(rgb(var(--grid-line) / var(--grid-alpha)) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--grid-line) / var(--grid-alpha)) 1px, transparent 1px);
     background-size: 42px 42px;
     mask-image: radial-gradient(circle at 50% 0%, black, transparent 78%);
   }
@@ -65,7 +110,7 @@
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), transparent 42%);
+    background: linear-gradient(160deg, rgb(var(--sheen) / var(--sheen-alpha)), transparent 42%);
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
@@ -84,7 +129,7 @@
   }
 
   .brand-text {
-    background: linear-gradient(100deg, #2ad5c3, #5586fd);
+    background: linear-gradient(100deg, rgb(var(--teal)), rgb(var(--azure)));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -97,10 +142,10 @@
 
   .btn-primary {
     @apply btn text-ink;
-    background: linear-gradient(120deg, #2ad5c3, #5586fd);
+    background: linear-gradient(120deg, rgb(var(--teal)), rgb(var(--azure)));
     box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.3) inset,
-      0 16px 34px -18px rgba(42, 213, 195, 0.9);
+      0 1px 0 rgb(255 255 255 / 0.3) inset,
+      0 16px 34px -18px rgb(var(--teal) / 0.9);
   }
 
   .btn-ghost {
@@ -128,6 +173,6 @@
   .skeleton::after {
     content: "";
     @apply absolute inset-0 -translate-x-full animate-shimmer;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.09), transparent);
+    background: linear-gradient(90deg, transparent, rgb(var(--sheen) / 0.09), transparent);
   }
 }

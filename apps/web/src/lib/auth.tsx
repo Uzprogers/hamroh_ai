@@ -12,6 +12,9 @@ interface AuthValue {
   ready: boolean;
   login: (phone: string, password: string) => Promise<User>;
   register: (payload: Record<string, unknown>) => Promise<User>;
+  loginWithGoogle: (googleToken: string) => Promise<User>;
+  accept: (result: AuthResult) => User;
+  completeProfile: (payload: Record<string, unknown>) => Promise<User>;
   logout: () => void;
 }
 
@@ -60,6 +63,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [accept, locale],
   );
 
+  const loginWithGoogle = useCallback(
+    async (googleToken: string) =>
+      accept(await api.post<AuthResult>("/auth/google", { token: googleToken, locale }, null)),
+    [accept, locale],
+  );
+
+  const completeProfile = useCallback(
+    async (payload: Record<string, unknown>) =>
+      accept(await api.post<AuthResult>("/auth/profile", { ...payload, locale }, token)),
+    [accept, locale, token],
+  );
+
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
@@ -67,8 +82,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, token, ready, login, register, logout }),
-    [user, token, ready, login, register, logout],
+    () => ({
+      user,
+      token,
+      ready,
+      login,
+      register,
+      loginWithGoogle,
+      accept,
+      completeProfile,
+      logout,
+    }),
+    [user, token, ready, login, register, loginWithGoogle, accept, completeProfile, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
