@@ -16,7 +16,7 @@ export function AuthScreen({ children, energy = 0 }: { children: ReactNode; ener
         <Backdrop style={{ opacity: 0.75 + Math.min(0.25, energy) }} />
       </div>
 
-      <aside className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-12">
+      <aside className="relative hidden overflow-hidden lg:flex lg:flex-col lg:p-10 xl:p-12">
         <span className="pointer-events-none absolute inset-y-16 right-0 w-px bg-gradient-to-b from-transparent via-edge to-transparent" />
 
         <Link to="/" className="relative flex items-center gap-3">
@@ -24,16 +24,16 @@ export function AuthScreen({ children, energy = 0 }: { children: ReactNode; ener
           <span className="font-display text-xl font-extrabold brand-text">Hamroh AI</span>
         </Link>
 
-        <div className="relative max-w-md">
-          <h1 className="font-display text-[42px] font-extrabold leading-[1.04]">
+        <div className="relative mt-10">
+          <h1 className="font-display text-[38px] font-extrabold leading-[1.04] xl:text-[44px]">
             {t("auth.hero.line1")}
             <br />
             <span className="brand-text">{t("auth.hero.line2")}</span>
           </h1>
-          <p className="mt-5 text-muted">{t("tagline")}</p>
+          <p className="mt-4 max-w-lg text-muted">{t("tagline")}</p>
         </div>
 
-        <div className="relative max-w-md">
+        <div className="relative mt-8 flex flex-1 pb-2">
           <GradePreview />
         </div>
       </aside>

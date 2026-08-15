@@ -87,14 +87,14 @@ export function GradePreview() {
     }`;
 
   return (
-    <div className="surface overflow-hidden p-5 sm:p-6">
+    <div className="surface flex h-full w-full flex-col overflow-hidden p-5 sm:p-6">
       <span
         key={scenario.id}
         className="pointer-events-none absolute inset-y-0 -left-16 w-32 animate-cardSweep bg-gradient-to-r from-transparent via-teal/15 to-transparent"
       />
 
       <div
-        className={`relative min-h-[352px] transition-all duration-200 ease-out ${
+        className={`relative flex min-h-[352px] flex-1 flex-col transition-all duration-200 ease-out ${
           swapping ? "translate-y-1 opacity-0 blur-[2px]" : "translate-y-0 opacity-100 blur-0"
         }`}
       >
@@ -111,23 +111,25 @@ export function GradePreview() {
 
         <p className="mt-4 text-xs text-muted">{t(scenario.taskKey)}</p>
 
-        <div className={`mt-4 flex justify-end ${reveal(1)}`}>
-          <div className="max-w-[88%] rounded-2xl rounded-br-md border border-edge bg-panel/80 px-4 py-3">
-            <p className="text-[11px] font-semibold text-muted">{t("preview.student")}</p>
-            <p
-              className={`mt-1 text-sm leading-relaxed ${scenario.monospace ? "font-mono text-[13px]" : ""}`}
-            >
-              {marked(t(scenario.answerKey))}
-            </p>
+        <div className="flex-1">
+          <div className={`mt-4 flex justify-end ${reveal(1)}`}>
+            <div className="max-w-[88%] rounded-2xl rounded-br-md border border-edge bg-panel/80 px-4 py-3">
+              <p className="text-[11px] font-semibold text-muted">{t("preview.student")}</p>
+              <p
+                className={`mt-1 text-sm leading-relaxed ${scenario.monospace ? "font-mono text-[13px]" : ""}`}
+              >
+                {marked(t(scenario.answerKey))}
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className={`mt-3 flex gap-3 ${reveal(2)}`}>
-          <span className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-teal to-azure text-xs font-extrabold text-ink">
-            H
-          </span>
-          <div className="max-w-[88%] rounded-2xl rounded-bl-md border border-teal/35 bg-teal/10 px-4 py-3">
-            <p className="text-sm leading-relaxed">{t(scenario.feedbackKey)}</p>
+          <div className={`mt-3 flex gap-3 ${reveal(2)}`}>
+            <span className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-teal to-azure text-xs font-extrabold text-ink">
+              H
+            </span>
+            <div className="max-w-[88%] rounded-2xl rounded-bl-md border border-teal/35 bg-teal/10 px-4 py-3">
+              <p className="text-sm leading-relaxed">{t(scenario.feedbackKey)}</p>
+            </div>
           </div>
         </div>
 
