@@ -8,7 +8,7 @@ export function Choice<T extends string>({
   onChange: (next: T) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2 rounded-xl border border-edge bg-ink/60 p-1">
+    <div className="grid auto-cols-fr grid-flow-col gap-2 rounded-xl border border-edge bg-ink/60 p-1">
       {options.map((option) => (
         <button
           key={option.value}

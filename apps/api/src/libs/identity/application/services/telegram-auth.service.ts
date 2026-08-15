@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  ServiceUnavailableException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { LessThan, Repository } from "typeorm";
 import { randomBytes } from "node:crypto";
@@ -23,9 +28,9 @@ export interface TelegramSessionStatus {
 
 export interface TelegramIdentity {
   id: number;
+  phone_number: string;
   first_name?: string;
   last_name?: string;
-  phone_number?: string;
 }
 
 @Injectable()
@@ -96,14 +101,18 @@ export class TelegramAuthService {
   private async upsertUser(identity: TelegramIdentity, locale: Locale): Promise<UserOrmEntity> {
     const telegram_id = String(identity.id);
     const phone = this.normalizePhone(identity.phone_number);
+    if (!phone) throw new BadRequestException("PHONE_REQUIRED");
 
     const existing =
       (await this.userRepo.findOne({ where: { telegram_id } })) ??
-      (phone ? await this.userRepo.findOne({ where: { phone } }) : null);
+      (await this.userRepo.findOne({ where: { phone } }));
 
     if (existing) {
       existing.telegram_id = telegram_id;
-      if (phone && !existing.phone) existing.phone = phone;
+      if (existing.phone !== phone) {
+        const taken = await this.userRepo.findOne({ where: { phone } });
+        if (!taken || taken.id === existing.id) existing.phone = phone;
+      }
       return this.userRepo.save(existing);
     }
 
@@ -120,9 +129,8 @@ export class TelegramAuthService {
     );
   }
 
-  private normalizePhone(raw?: string): string | null {
-    if (!raw) return null;
+  private normalizePhone(raw: string): string | null {
     const digits = raw.replace(/\D/g, "");
-    return /^998\d{9}$/.test(digits) ? `+${digits}` : null;
+    return /^\d{9,15}$/.test(digits) ? `+${digits}` : null;
   }
 }

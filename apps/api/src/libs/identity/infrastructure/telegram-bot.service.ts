@@ -1,8 +1,8 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { env } from "../../../core/config/env.config";
 import { Locale } from "../../../core/i18n/locale.enum";
-import { TELEGRAM_COPY } from "../config/telegram.messages";
-import { TelegramAuthService, TelegramIdentity } from "../application/services/telegram-auth.service";
+import { TELEGRAM_COPY, TelegramCopy } from "../config/telegram.messages";
+import { TelegramAuthService } from "../application/services/telegram-auth.service";
 
 interface TelegramContact {
   phone_number: string;
@@ -67,17 +67,6 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 
   private async handle(message: TelegramMessage): Promise<void> {
     const chatId = message.chat.id;
-
-    if (message.contact) {
-      await this.finish(chatId, {
-        id: message.contact.user_id ?? chatId,
-        first_name: message.contact.first_name ?? message.from?.first_name,
-        last_name: message.contact.last_name ?? message.from?.last_name,
-        phone_number: message.contact.phone_number,
-      });
-      return;
-    }
-
     const text = message.text?.trim() ?? "";
     const startCode = text.startsWith("/start") ? text.split(/\s+/)[1] : undefined;
 
@@ -86,40 +75,6 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    if (this.waiting.has(chatId) && this.isSkip(text)) {
-      await this.finish(chatId, {
-        id: message.from?.id ?? chatId,
-        first_name: message.from?.first_name,
-        last_name: message.from?.last_name,
-      });
-      return;
-    }
-
-    await this.send(chatId, TELEGRAM_COPY[Locale.UZ].greeting);
-  }
-
-  private isSkip(text: string): boolean {
-    return Object.values(TELEGRAM_COPY).some((copy) => copy.skipContact === text);
-  }
-
-  private async offerConfirm(chatId: number, code: string): Promise<void> {
-    const login = await this.telegramAuth.findPending(code);
-    if (!login) {
-      await this.send(chatId, TELEGRAM_COPY[Locale.UZ].expired);
-      return;
-    }
-
-    this.waiting.set(chatId, code);
-    const copy = TELEGRAM_COPY[login.locale];
-
-    await this.send(chatId, copy.askContact, {
-      keyboard: [[{ text: copy.shareContact, request_contact: true }], [{ text: copy.skipContact }]],
-      resize_keyboard: true,
-      one_time_keyboard: true,
-    });
-  }
-
-  private async finish(chatId: number, identity: TelegramIdentity): Promise<void> {
     const code = this.waiting.get(chatId);
     if (!code) {
       await this.send(chatId, TELEGRAM_COPY[Locale.UZ].greeting);
@@ -133,10 +88,47 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    await this.telegramAuth.approve(login, identity);
-    this.waiting.delete(chatId);
+    const copy = TELEGRAM_COPY[login.locale];
 
-    await this.send(chatId, TELEGRAM_COPY[login.locale].approved, { remove_keyboard: true });
+    if (!message.contact) {
+      await this.askContact(chatId, copy, copy.needContact);
+      return;
+    }
+
+    if (message.contact.user_id !== (message.from?.id ?? chatId)) {
+      await this.askContact(chatId, copy, copy.foreignContact);
+      return;
+    }
+
+    await this.telegramAuth.approve(login, {
+      id: message.contact.user_id,
+      first_name: message.contact.first_name ?? message.from?.first_name,
+      last_name: message.contact.last_name ?? message.from?.last_name,
+      phone_number: message.contact.phone_number,
+    });
+
+    this.waiting.delete(chatId);
+    await this.send(chatId, copy.approved, { remove_keyboard: true });
+  }
+
+  private async offerConfirm(chatId: number, code: string): Promise<void> {
+    const login = await this.telegramAuth.findPending(code);
+    if (!login) {
+      await this.send(chatId, TELEGRAM_COPY[Locale.UZ].expired);
+      return;
+    }
+
+    this.waiting.set(chatId, code);
+    const copy = TELEGRAM_COPY[login.locale];
+    await this.askContact(chatId, copy, copy.askContact);
+  }
+
+  private async askContact(chatId: number, copy: TelegramCopy, text: string): Promise<void> {
+    await this.send(chatId, text, {
+      keyboard: [[{ text: copy.shareContact, request_contact: true }]],
+      resize_keyboard: true,
+      one_time_keyboard: true,
+    });
   }
 
   private async send(chatId: number, text: string, replyMarkup?: unknown): Promise<void> {

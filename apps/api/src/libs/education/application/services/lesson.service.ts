@@ -9,7 +9,7 @@ import { AssignmentType, LessonStatus } from "../../config/education.enums";
 import { CreateLessonDto } from "../dto/create-lesson.dto";
 import { Locale } from "../../../../core/i18n/locale.enum";
 import { LANGUAGE_INSTRUCTION } from "../../../../core/i18n/prompt-language";
-import { InstitutionType } from "../../../identity/config/identity.enums";
+import { INSTITUTION_PROMPT_LABEL } from "../../config/institution.labels";
 
 interface GeneratedLesson {
   objective: string;
@@ -70,7 +70,7 @@ export class LessonService {
       [
         `Subject: ${group.subject}`,
         `Group: ${group.name}`,
-        `Institution: ${group.institution_type === InstitutionType.SCHOOL ? "secondary school" : "university"}`,
+        `Institution: ${INSTITUTION_PROMPT_LABEL[group.institution_type]}`,
         `Topic: ${dto.topic}`,
         dto.note ? `Teacher note: ${dto.note}` : "",
       ]

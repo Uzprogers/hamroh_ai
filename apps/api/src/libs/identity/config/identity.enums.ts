@@ -6,6 +6,7 @@ export enum Role {
 export enum InstitutionType {
   SCHOOL = "SCHOOL",
   UNIVERSITY = "UNIVERSITY",
+  TUTORING = "TUTORING",
 }
 
 export enum AuthProvider {

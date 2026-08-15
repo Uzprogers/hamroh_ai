@@ -1,11 +1,26 @@
 import { useState, type FormEvent } from "react";
 import { AuthScreen } from "./AuthScreen";
+import { TUTOR_COURSES } from "./onboarding.courses";
 import { Choice } from "../../components/Choice";
 import { StepIcon } from "../../components/StepIcon";
 import { useAuth } from "../../lib/auth";
 import { ApiError } from "../../lib/api";
+import { formatPhone } from "../../lib/phone";
 import { useI18n, useTranslateError } from "../../i18n/i18n";
+import type { TranslationKey } from "../../i18n/dictionary";
 import type { InstitutionType, Role } from "../../lib/types";
+
+const LEVEL_LABEL: Record<InstitutionType, TranslationKey> = {
+  SCHOOL: "onboarding.level.school",
+  UNIVERSITY: "onboarding.level.university",
+  TUTORING: "onboarding.level.tutoring",
+};
+
+const INSTITUTION_LABEL: Record<InstitutionType, TranslationKey> = {
+  SCHOOL: "onboarding.institution.school",
+  UNIVERSITY: "onboarding.institution.university",
+  TUTORING: "onboarding.institution.tutoring",
+};
 
 function RoleCard({
   title,
@@ -70,6 +85,12 @@ export function OnboardingPage() {
     event.preventDefault();
     if (!role) return;
 
+    const phone = user?.phone ?? form.phone.trim();
+    if (!/^\+998\d{9}$/.test(phone)) {
+      setError(t("onboarding.phone.invalid"));
+      return;
+    }
+
     setBusy(true);
     setError(null);
     try {
@@ -81,7 +102,7 @@ export function OnboardingPage() {
         institution_name: form.institution_name.trim(),
         grade_level: role === "STUDENT" ? form.grade_level.trim() || undefined : undefined,
         subject: role === "TEACHER" ? form.subject.trim() || undefined : undefined,
-        phone: form.phone.trim() && form.phone !== user?.phone ? form.phone.trim() : undefined,
+        phone: phone !== user?.phone ? phone : undefined,
       });
     } catch (err) {
       setError(translateError(err instanceof ApiError ? err.code : "network"));
@@ -170,13 +191,14 @@ export function OnboardingPage() {
                 options={[
                   { value: "SCHOOL", label: t("auth.institution.school") },
                   { value: "UNIVERSITY", label: t("auth.institution.university") },
+                  { value: "TUTORING", label: t("auth.institution.tutoring") },
                 ]}
               />
             </div>
 
             <div>
               <label className="label" htmlFor="ob_institution">
-                {t("auth.institutionName")}
+                {t(INSTITUTION_LABEL[institutionType])}
               </label>
               <input
                 id="ob_institution"
@@ -185,6 +207,32 @@ export function OnboardingPage() {
                 onChange={update("institution_name")}
               />
             </div>
+
+            {role === "STUDENT" && institutionType === "TUTORING" ? (
+              <div>
+                <span className="label">{t(LEVEL_LABEL.TUTORING)}</span>
+                <div className="flex flex-wrap gap-2">
+                  {TUTOR_COURSES.map((key) => {
+                    const label = t(key);
+                    const active = form.grade_level === label;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setForm((prev) => ({ ...prev, grade_level: label }))}
+                        className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${
+                          active
+                            ? "border-teal/60 bg-gradient-to-r from-teal/25 to-azure/20 text-paper"
+                            : "border-edge bg-panel/60 text-muted hover:border-teal/40"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid gap-4 sm:grid-cols-2">
               {role === "TEACHER" ? (
@@ -199,16 +247,21 @@ export function OnboardingPage() {
                     onChange={update("subject")}
                   />
                 </div>
-              ) : (
+              ) : institutionType === "TUTORING" ? null : (
                 <div>
                   <label className="label" htmlFor="ob_grade">
-                    {t("auth.gradeLevel")}
+                    {t(LEVEL_LABEL[institutionType])}
                   </label>
                   <input
                     id="ob_grade"
                     className="field"
                     value={form.grade_level}
                     onChange={update("grade_level")}
+                    placeholder={t(
+                      institutionType === "SCHOOL"
+                        ? "onboarding.level.school.hint"
+                        : "onboarding.level.university.hint",
+                    )}
                   />
                 </div>
               )}
@@ -217,13 +270,23 @@ export function OnboardingPage() {
                 <label className="label" htmlFor="ob_phone">
                   {t("onboarding.phone")}
                 </label>
-                <input
-                  id="ob_phone"
-                  className="field"
-                  value={form.phone}
-                  onChange={update("phone")}
-                  placeholder="+998901234567"
-                />
+                {user?.phone ? (
+                  <input
+                    id="ob_phone"
+                    className="field cursor-not-allowed opacity-70"
+                    value={formatPhone(user.phone)}
+                    readOnly
+                    disabled
+                  />
+                ) : (
+                  <input
+                    id="ob_phone"
+                    className="field"
+                    value={form.phone}
+                    onChange={update("phone")}
+                    placeholder="+998901234567"
+                  />
+                )}
               </div>
             </div>
 

@@ -1,7 +1,7 @@
 import type { Locale } from "../i18n/dictionary";
 
 export type Role = "TEACHER" | "STUDENT";
-export type InstitutionType = "SCHOOL" | "UNIVERSITY";
+export type InstitutionType = "SCHOOL" | "UNIVERSITY" | "TUTORING";
 export type LessonStatus = "DRAFT" | "ACTIVE" | "CLOSED";
 export type AssignmentType = "WRITTEN" | "QUIZ" | "SPEAKING";
 export type Severity = "MINOR" | "MAJOR";
