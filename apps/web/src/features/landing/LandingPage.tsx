@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Orb } from "../../components/Orb";
+import { Backdrop } from "../../components/Backdrop";
 import { Logo } from "../../components/Logo";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 import { ThemeToggle } from "../../components/ThemeToggle";
@@ -68,10 +68,10 @@ export function LandingPage() {
       current += (target - current) * 0.05;
 
       if (orbRef.current) {
-        const drift = -Math.sin(current * Math.PI) * 58;
-        const lift = Math.sin(current * Math.PI * 2) * 9;
-        orbRef.current.style.transform = `translate3d(${drift}vw, ${lift}vh, 0) scale(${1 - Math.sin(current * Math.PI) * 0.16})`;
-        orbRef.current.style.opacity = String(0.82 - Math.sin(current * Math.PI) * 0.34);
+        const drift = -Math.sin(current * Math.PI) * 9;
+        const lift = Math.sin(current * Math.PI * 2) * 5;
+        orbRef.current.style.transform = `translate3d(${drift}vw, ${lift}vh, 0) scale(${1 + current * 0.08})`;
+        orbRef.current.style.opacity = String(0.95 - Math.sin(current * Math.PI) * 0.2);
       }
 
       frame = requestAnimationFrame(tick);
@@ -95,12 +95,8 @@ export function LandingPage() {
 
   return (
     <div className="relative min-h-full">
-      <div className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[520px] grid-floor" />
-      <div
-        ref={orbRef}
-        className="pointer-events-none fixed right-[-10vw] top-[8vh] -z-10 hidden h-[74vh] w-[74vh] will-change-transform [mask-image:radial-gradient(closest-side,black,transparent)] lg:block"
-      >
-        <Orb level={0.06} state="IDLE" distance={6.1} />
+      <div ref={orbRef} className="pointer-events-none fixed inset-0 -z-10 will-change-transform">
+        <Backdrop />
       </div>
 
       <header className="sticky top-0 z-30 border-b border-edge/40 bg-ink/70 backdrop-blur-xl">
@@ -121,7 +117,7 @@ export function LandingPage() {
         </div>
       </header>
 
-      <Section className="grid min-h-[86vh] items-center gap-12 pt-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+      <Section className="grid items-center gap-12 pt-8 lg:min-h-[78vh] lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
         <div>
           <Reveal delay={80}>
             <h1 className="font-display text-[42px] font-extrabold leading-[1.04] sm:text-[56px]">

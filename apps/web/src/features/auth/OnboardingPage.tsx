@@ -92,7 +92,7 @@ export function OnboardingPage() {
 
   return (
     <AuthScreen energy={0.18}>
-      <div className="surface p-7 sm:p-9">
+      <div className="surface p-8 sm:p-10">
         <div className="flex items-center justify-between gap-3">
           <span className="chip">{t("onboarding.step").replace("{n}", String(step))}</span>
           <button

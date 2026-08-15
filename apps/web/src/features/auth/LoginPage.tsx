@@ -34,7 +34,7 @@ export function LoginPage() {
 
   return (
     <AuthScreen energy={energy}>
-      <div className="surface p-7 sm:p-9">
+      <div className="surface p-8 sm:p-10">
         <h2 className="font-display text-3xl font-extrabold">{t("auth.login.title")}</h2>
         <p className="mt-1.5 text-sm text-muted">{t("auth.login.subtitle")}</p>
 

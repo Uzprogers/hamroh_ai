@@ -36,11 +36,41 @@ export default {
           "0%": { transform: "scale(.9)", opacity: "0.7" },
           "100%": { transform: "scale(1.6)", opacity: "0" },
         },
+        previewSweep: {
+          from: { transform: "scaleX(0)" },
+          to: { transform: "scaleX(1)" },
+        },
+        cardSweep: {
+          from: { transform: "translateX(-120%)" },
+          to: { transform: "translateX(120%)" },
+        },
+        driftA: {
+          "0%, 100%": { transform: "translate3d(0,0,0) scale(1)" },
+          "50%": { transform: "translate3d(6vw,8vh,0) scale(1.12)" },
+        },
+        driftB: {
+          "0%, 100%": { transform: "translate3d(0,0,0) scale(1.05)" },
+          "50%": { transform: "translate3d(-7vw,-6vh,0) scale(0.92)" },
+        },
+        driftC: {
+          "0%, 100%": { transform: "translate3d(0,0,0) scale(0.95)" },
+          "50%": { transform: "translate3d(4vw,-9vh,0) scale(1.15)" },
+        },
+        glyphFloat: {
+          "0%, 100%": { transform: "translateY(0) rotate(-3deg)", opacity: "0.35" },
+          "50%": { transform: "translateY(-26px) rotate(3deg)", opacity: "1" },
+        },
       },
       animation: {
         rise: "rise .5s cubic-bezier(.2,.8,.2,1) both",
         shimmer: "shimmer 1.6s infinite",
         pulseRing: "pulseRing 2s ease-out infinite",
+        previewSweep: "previewSweep 7.6s linear forwards",
+        cardSweep: "cardSweep 1.1s cubic-bezier(.4,0,.2,1) forwards",
+        driftA: "driftA 26s ease-in-out infinite",
+        driftB: "driftB 32s ease-in-out infinite",
+        driftC: "driftC 38s ease-in-out infinite",
+        glyphFloat: "glyphFloat 20s ease-in-out infinite",
       },
     },
   },
