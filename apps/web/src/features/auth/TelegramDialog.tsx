@@ -29,6 +29,7 @@ export function TelegramDialog({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [expired, setExpired] = useState(false);
   const active = useRef(true);
+  const requested = useRef(false);
 
   useEffect(() => {
     active.current = true;
@@ -66,6 +67,8 @@ export function TelegramDialog({ onClose }: { onClose: () => void }) {
   };
 
   useEffect(() => {
+    if (requested.current) return;
+    requested.current = true;
     void open();
   }, []);
 
