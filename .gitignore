@@ -1,14 +1,41 @@
+# bog'liqliklar va build
 node_modules/
 dist/
-.env
-.env.local
-logs/
-*.log
+build/
+coverage/
 .next/
 .turbo/
+.vite/
+
+# muhit va kalitlar
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
 key.json
 personal.key.json
 *.key.json
+service-account*.json
+credentials*.json
+secrets/
+
+# loglar
+logs/
+*.log
+npm-debug.log*
+
+# ish jarayoni artefaktlari (repoga chiqmaydi)
+docs/
 .docs/
 .docs
-docs/
+.superpowers/
+.claude/
+scratchpad/
+
+# muharrir va OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
