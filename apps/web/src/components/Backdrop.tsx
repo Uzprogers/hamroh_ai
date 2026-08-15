@@ -9,8 +9,10 @@ const LAYER_TWO =
 const GLYPHS = [
   { char: "∫", top: "16%", left: "10%", size: "54px", delay: "0s", duration: "19s" },
   { char: "π", top: "64%", left: "6%", size: "40px", delay: "2.4s", duration: "23s" },
+  { char: "√x", top: "32%", left: "76%", size: "38px", delay: "1.2s", duration: "20s" },
   { char: "Σ", top: "74%", left: "70%", size: "46px", delay: "3.6s", duration: "25s" },
   { char: "A+", top: "14%", left: "60%", size: "32px", delay: "0.8s", duration: "21s" },
+  { char: "H₂O", top: "50%", left: "38%", size: "30px", delay: "4.2s", duration: "27s" },
 ];
 
 export function Backdrop({
