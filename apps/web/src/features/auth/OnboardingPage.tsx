@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { AuthScreen } from "./AuthScreen";
 import { Choice } from "../../components/Choice";
+import { StepIcon } from "../../components/StepIcon";
 import { useAuth } from "../../lib/auth";
 import { ApiError } from "../../lib/api";
 import { useI18n, useTranslateError } from "../../i18n/i18n";
@@ -9,13 +10,13 @@ import type { InstitutionType, Role } from "../../lib/types";
 function RoleCard({
   title,
   description,
-  glyph,
+  icon,
   selected,
   onSelect,
 }: {
   title: string;
   description: string;
-  glyph: string;
+  icon: number;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -23,14 +24,16 @@ function RoleCard({
     <button
       type="button"
       onClick={onSelect}
-      className={`tilt group relative overflow-hidden rounded-2xl border p-5 text-start transition ${
+      className={`tilt relative overflow-hidden rounded-2xl border p-5 text-start transition ${
         selected
           ? "border-teal/70 bg-gradient-to-br from-teal/15 to-azure/10"
           : "border-edge bg-panel/60 hover:border-teal/40"
       }`}
     >
-      <div className="font-display text-3xl">{glyph}</div>
-      <div className="mt-3 font-display text-lg font-extrabold">{title}</div>
+      <span className="grid h-11 w-11 place-items-center rounded-xl border border-teal/35 bg-gradient-to-br from-teal/20 to-azure/10 text-teal">
+        <StepIcon step={icon} />
+      </span>
+      <div className="mt-4 font-display text-lg font-extrabold">{title}</div>
       <p className="mt-1 text-xs text-muted">{description}</p>
     </button>
   );
@@ -118,14 +121,14 @@ export function OnboardingPage() {
         {step === 1 ? (
           <div className="mt-7 grid grid-cols-2 gap-3">
             <RoleCard
-              glyph="✎"
+              icon={1}
               title={t("auth.role.teacher")}
               description={t("onboarding.role.teacher.desc")}
               selected={role === "TEACHER"}
               onSelect={() => pickRole("TEACHER")}
             />
             <RoleCard
-              glyph="✦"
+              icon={5}
               title={t("auth.role.student")}
               description={t("onboarding.role.student.desc")}
               selected={role === "STUDENT"}

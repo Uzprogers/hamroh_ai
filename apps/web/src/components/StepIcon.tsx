@@ -20,6 +20,11 @@ const PATHS: Record<number, string[]> = {
     "M12 18v3",
     "M9 21h6",
   ],
+  5: [
+    "M3 8.5L12 4l9 4.5-9 4.5-9-4.5z",
+    "M7.5 10.8V16c0 1.4 2 2.5 4.5 2.5s4.5-1.1 4.5-2.5v-5.2",
+    "M20 9.2V14",
+  ],
 };
 
 export function StepIcon({ step }: { step: number }) {

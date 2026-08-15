@@ -5,7 +5,7 @@ import { Logo } from "../../components/Logo";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { Reveal } from "./Reveal";
-import { StepIcon } from "./StepIcon";
+import { StepIcon } from "../../components/StepIcon";
 import { FeatureIcon } from "./FeatureIcon";
 import { GradePreview } from "../../components/GradePreview";
 import { useI18n } from "../../i18n/i18n";
