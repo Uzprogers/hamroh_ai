@@ -272,9 +272,6 @@ export function LandingPage() {
                 {t("landing.cta.button")}
                 <span aria-hidden="true">→</span>
               </Link>
-              <Link to="/register" className="btn-ghost px-8 py-3.5">
-                {t("landing.nav.register")}
-              </Link>
             </div>
           </div>
         </Reveal>

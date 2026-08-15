@@ -10,8 +10,6 @@ interface AuthValue {
   user: User | null;
   token: string | null;
   ready: boolean;
-  login: (phone: string, password: string) => Promise<User>;
-  register: (payload: Record<string, unknown>) => Promise<User>;
   loginWithGoogle: (googleToken: string) => Promise<User>;
   accept: (result: AuthResult) => User;
   completeProfile: (payload: Record<string, unknown>) => Promise<User>;
@@ -51,18 +49,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result.user;
   }, []);
 
-  const login = useCallback(
-    async (phone: string, password: string) =>
-      accept(await api.post<AuthResult>("/auth/login", { phone, password }, null)),
-    [accept],
-  );
-
-  const register = useCallback(
-    async (payload: Record<string, unknown>) =>
-      accept(await api.post<AuthResult>("/auth/register", { ...payload, locale }, null)),
-    [accept, locale],
-  );
-
   const loginWithGoogle = useCallback(
     async (googleToken: string) =>
       accept(await api.post<AuthResult>("/auth/google", { token: googleToken, locale }, null)),
@@ -86,14 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       token,
       ready,
-      login,
-      register,
       loginWithGoogle,
       accept,
       completeProfile,
       logout,
     }),
-    [user, token, ready, login, register, loginWithGoogle, accept, completeProfile, logout],
+    [user, token, ready, loginWithGoogle, accept, completeProfile, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

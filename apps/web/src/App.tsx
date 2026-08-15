@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
 import { useAuth } from "./lib/auth";
 import { LoginPage } from "./features/auth/LoginPage";
-import { RegisterPage } from "./features/auth/RegisterPage";
 import { OnboardingPage } from "./features/auth/OnboardingPage";
 import { LandingPage } from "./features/landing/LandingPage";
 import { TeacherHome } from "./features/teacher/TeacherHome";
@@ -26,7 +25,7 @@ export function App() {
     return (
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register" element={<Navigate to="/login" replace />} />
         <Route path="/" element={<LandingPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

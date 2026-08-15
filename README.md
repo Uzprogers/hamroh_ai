@@ -73,15 +73,15 @@ npm run api                                 # http://localhost:3001
 npm run web                                 # http://localhost:5173
 ```
 
-**Demo hisoblar:** ustoz `+998901112233 / hamroh2026` · o'quvchi `+998900000001 / student123`
+**Kirish parolsiz:** Telegram yoki Google. Hisob bo'lmasa avtomatik yaratiladi — rol va muassasa ma'lumotlari kirgandan keyingi qadamda so'raladi.
 
 <details>
-<summary><b>Google va Telegram orqali kirishni yoqish</b></summary>
+<summary><b>Telegram va Google kirishini sozlash</b></summary>
 
 <br />
 
-- **Google** — Google Cloud Console → OAuth client → *Authorized JavaScript origins* ga `http://localhost:5173` (va prod domeningiz) qo'shiladi. `GOOGLE_CLIENT_ID` va `VITE_GOOGLE_CLIENT_ID` bir xil bo'lishi shart.
-- **Telegram** — [@BotFather](https://t.me/BotFather) da bot ochiladi, `TELEGRAM_BOT_TOKEN` va `TELEGRAM_BOT_USERNAME` `.env` ga yoziladi. Kalitlar bo'sh bo'lsa tugma "sozlanmagan" xabarini beradi, ilova ishlashda davom etadi.
+- **Telegram** — [@BotFather](https://t.me/BotFather) da bot ochiladi, `TELEGRAM_BOT_TOKEN` va `TELEGRAM_BOT_USERNAME` `.env` ga yoziladi. Server `getUpdates` bilan tinglaydi, shuning uchun botda webhook o'rnatilmagan bo'lishi kerak. Kalitlar bo'sh bo'lsa Telegram tugmasi "sozlanmagan" deydi, ilova ishlashda davom etadi.
+- **Google** — Google Cloud Console → OAuth client → *Authorized JavaScript origins* ga `http://localhost:5173` (va prod domeningiz) qo'shiladi. `GOOGLE_CLIENT_ID` va `VITE_GOOGLE_CLIENT_ID` bir xil bo'lishi shart. Origin ro'yxatda bo'lmasa Google `400: origin_mismatch` qaytaradi.
 
 </details>
 
