@@ -5,6 +5,8 @@ import { Logo } from "../../components/Logo";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { Reveal } from "./Reveal";
+import { StepIcon } from "./StepIcon";
+import { FeatureIcon } from "./FeatureIcon";
 import { GradePreview } from "../../components/GradePreview";
 import { useI18n } from "../../i18n/i18n";
 import type { TranslationKey } from "../../i18n/dictionary";
@@ -28,7 +30,7 @@ function Section({
   className?: string;
 }) {
   return (
-    <section id={id} className={`relative mx-auto w-full max-w-6xl px-5 py-24 sm:py-28 ${className}`}>
+    <section id={id} className={`relative mx-auto w-full max-w-6xl px-5 py-20 sm:py-24 ${className}`}>
       {children}
     </section>
   );
@@ -96,7 +98,7 @@ export function LandingPage() {
       <div className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[520px] grid-floor" />
       <div
         ref={orbRef}
-        className="pointer-events-none fixed right-[-10vw] top-[8vh] -z-10 hidden h-[74vh] w-[74vh] will-change-transform lg:block"
+        className="pointer-events-none fixed right-[-10vw] top-[8vh] -z-10 hidden h-[74vh] w-[74vh] will-change-transform [mask-image:radial-gradient(closest-side,black,transparent)] lg:block"
       >
         <Orb level={0.06} state="IDLE" distance={6.1} />
       </div>
@@ -119,39 +121,35 @@ export function LandingPage() {
         </div>
       </header>
 
-      <Section className="flex min-h-[88vh] flex-col justify-center pt-10">
-        <Reveal>
-          <Eyebrow>{t("landing.hero.badge")}</Eyebrow>
-        </Reveal>
+      <Section className="grid min-h-[86vh] items-center gap-12 pt-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+        <div>
+          <Reveal delay={80}>
+            <h1 className="font-display text-[42px] font-extrabold leading-[1.04] sm:text-[56px]">
+              {t("auth.hero.line1")}
+              <br />
+              <span className="brand-text">{t("auth.hero.line2")}</span>
+            </h1>
+          </Reveal>
 
-        <Reveal delay={80}>
-          <h1 className="mt-6 max-w-2xl font-display text-[46px] font-extrabold leading-[1.03] sm:text-[64px]">
-            {t("auth.hero.line1")}
-            <br />
-            <span className="brand-text">{t("auth.hero.line2")}</span>
-          </h1>
-        </Reveal>
+          <Reveal delay={160}>
+            <p className="mt-6 max-w-lg text-lg text-muted">{t("landing.hero.text")}</p>
+          </Reveal>
 
-        <Reveal delay={160}>
-          <p className="mt-6 max-w-lg text-lg text-muted">{t("landing.hero.text")}</p>
-        </Reveal>
-
-        <Reveal delay={240}>
-          <div className="mt-9 flex flex-wrap gap-3">
-            <Link to="/login" className="btn-primary px-7 py-3.5">
-              {t("landing.hero.cta")}
-              <span aria-hidden="true">→</span>
-            </Link>
-            <a href="#how" className="btn-ghost px-7 py-3.5">
-              {t("landing.hero.secondary")}
-            </a>
-          </div>
-        </Reveal>
+          <Reveal delay={240}>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link to="/login" className="btn-primary px-7 py-3.5">
+                {t("landing.hero.cta")}
+                <span aria-hidden="true">→</span>
+              </Link>
+              <a href="#how" className="btn-ghost px-7 py-3.5">
+                {t("landing.hero.secondary")}
+              </a>
+            </div>
+          </Reveal>
+        </div>
 
         <Reveal delay={320}>
-          <div className="mt-14 max-w-md">
-            <GradePreview />
-          </div>
+          <GradePreview />
         </Reveal>
       </Section>
 
@@ -191,18 +189,18 @@ export function LandingPage() {
           </h2>
         </Reveal>
 
-        <div className="relative mt-12 space-y-4">
-          <div className="absolute bottom-6 left-[26px] top-6 hidden w-px bg-gradient-to-b from-teal via-azure to-transparent sm:block" />
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((step, index) => (
             <Reveal key={step.n} delay={index * 110}>
-              <div className="surface relative flex gap-5 p-6">
-                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-teal/40 bg-gradient-to-br from-teal/20 to-azure/10 font-display text-xl font-extrabold text-teal">
-                  {step.n}
+              <div className="surface tilt h-full p-6">
+                <div className="flex items-center justify-between">
+                  <span className="grid h-12 w-12 place-items-center rounded-2xl border border-teal/35 bg-gradient-to-br from-teal/20 to-azure/10 text-teal">
+                    <StepIcon step={step.n} />
+                  </span>
+                  <span className="font-mono text-xs text-muted">0{step.n}</span>
                 </div>
-                <div>
-                  <div className="font-display text-lg font-bold">{step.title}</div>
-                  <p className="mt-1.5 text-sm text-muted">{step.text}</p>
-                </div>
+                <div className="mt-5 font-display text-lg font-bold">{step.title}</div>
+                <p className="mt-2 text-sm text-muted">{step.text}</p>
               </div>
             </Reveal>
           ))}
@@ -254,7 +252,10 @@ export function LandingPage() {
           {features.map((feature, index) => (
             <Reveal key={feature.n} delay={index * 70}>
               <div className="surface tilt h-full p-6">
-                <div className="font-display text-lg font-bold">{feature.title}</div>
+                <span className="grid h-11 w-11 place-items-center rounded-xl border border-azure/30 bg-gradient-to-br from-azure/20 to-teal/10 text-azure">
+                  <FeatureIcon feature={feature.n} />
+                </span>
+                <div className="mt-5 font-display text-lg font-bold">{feature.title}</div>
                 <p className="mt-2 text-sm text-muted">{feature.text}</p>
               </div>
             </Reveal>

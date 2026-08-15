@@ -13,7 +13,6 @@ export const dictionary = {
 
     "landing.nav.login": "Kirish",
     "landing.nav.register": "Ro'yxatdan o'tish",
-    "landing.hero.badge": "Umummilliy AI Xakaton · Ta'lim",
     "landing.hero.text":
       "Mavzuni yozasiz — AI dars rejasi va topshiriqlarni tuzadi, javoblarni baholaydi, xatolarni o'zbek tilida tushuntiradi.",
     "landing.hero.cta": "Kirish",
@@ -222,7 +221,6 @@ export const dictionary = {
 
     "landing.nav.login": "Войти",
     "landing.nav.register": "Регистрация",
-    "landing.hero.badge": "Национальный AI-хакатон · Образование",
     "landing.hero.text":
       "Вы вводите тему — ИИ составляет план урока и задания, проверяет ответы и объясняет ошибки на родном языке.",
     "landing.hero.cta": "Войти",
@@ -431,7 +429,6 @@ export const dictionary = {
 
     "landing.nav.login": "Sign in",
     "landing.nav.register": "Create account",
-    "landing.hero.badge": "National AI Hackathon · Education",
     "landing.hero.text":
       "Type a topic — AI builds the lesson plan and assignments, marks the answers and explains mistakes in the student's own language.",
     "landing.hero.cta": "Sign in",

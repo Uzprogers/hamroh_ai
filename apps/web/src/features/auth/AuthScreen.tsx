@@ -45,7 +45,7 @@ export function AuthScreen({ children, energy = 0 }: { children: ReactNode; ener
         </div>
 
         <div className="relative max-w-md">
-          <GradePreview compact />
+          <GradePreview />
         </div>
       </aside>
 
