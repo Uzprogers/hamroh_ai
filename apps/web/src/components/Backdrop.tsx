@@ -1,12 +1,16 @@
 import type { CSSProperties } from "react";
 
+const LAYER_ONE =
+  "radial-gradient(45% 40% at 18% 22%, rgb(var(--teal) / 0.22), transparent 70%), radial-gradient(50% 42% at 82% 30%, rgb(var(--azure) / 0.2), transparent 70%)";
+
+const LAYER_TWO =
+  "radial-gradient(48% 44% at 62% 88%, rgb(var(--teal) / 0.14), transparent 72%), radial-gradient(40% 38% at 30% 70%, rgb(var(--azure) / 0.14), transparent 72%)";
+
 const GLYPHS = [
-  { char: "∫", top: "18%", left: "12%", size: "56px", delay: "0s", duration: "17s" },
-  { char: "π", top: "62%", left: "8%", size: "42px", delay: "2.4s", duration: "21s" },
-  { char: "√x", top: "34%", left: "78%", size: "38px", delay: "1.2s", duration: "19s" },
-  { char: "Σ", top: "76%", left: "68%", size: "48px", delay: "3.6s", duration: "23s" },
-  { char: "A+", top: "12%", left: "58%", size: "34px", delay: "0.8s", duration: "18s" },
-  { char: "H₂O", top: "50%", left: "40%", size: "30px", delay: "4.2s", duration: "25s" },
+  { char: "∫", top: "16%", left: "10%", size: "54px", delay: "0s", duration: "19s" },
+  { char: "π", top: "64%", left: "6%", size: "40px", delay: "2.4s", duration: "23s" },
+  { char: "Σ", top: "74%", left: "70%", size: "46px", delay: "3.6s", duration: "25s" },
+  { char: "A+", top: "14%", left: "60%", size: "32px", delay: "0.8s", duration: "21s" },
 ];
 
 export function Backdrop({
@@ -21,16 +25,19 @@ export function Backdrop({
       className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
       style={style}
     >
-      <span className="absolute left-[6%] top-[10%] h-[46vh] w-[46vh] animate-driftA rounded-full bg-teal/30 blur-[90px]" />
-      <span className="absolute right-[2%] top-[24%] h-[52vh] w-[52vh] animate-driftB rounded-full bg-azure/30 blur-[110px]" />
-      <span className="absolute bottom-[-12%] left-[34%] h-[44vh] w-[44vh] animate-driftC rounded-full bg-teal/20 blur-[120px]" />
-
-      <span className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,transparent_45%,rgb(var(--ink)/0.35)_100%)]" />
+      <span
+        className="absolute -inset-[30%] animate-driftA"
+        style={{ backgroundImage: LAYER_ONE }}
+      />
+      <span
+        className="absolute -inset-[30%] animate-driftB"
+        style={{ backgroundImage: LAYER_TWO }}
+      />
 
       {GLYPHS.map((glyph) => (
         <span
           key={glyph.char}
-          className="absolute animate-glyphFloat font-mono font-medium text-paper/[0.07]"
+          className="absolute animate-glyphFloat font-mono font-medium text-paper/[0.06]"
           style={{
             top: glyph.top,
             left: glyph.left,

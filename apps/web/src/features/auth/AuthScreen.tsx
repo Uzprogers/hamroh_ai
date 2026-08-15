@@ -12,7 +12,7 @@ export function AuthScreen({ children, energy = 0 }: { children: ReactNode; ener
 
   return (
     <div className="relative flex min-h-full flex-col lg:grid lg:grid-cols-[1.02fr_1fr]">
-      <div className="pointer-events-none fixed inset-0 -z-10">
+      <div className="pointer-events-none fixed -inset-[15%] -z-10">
         <Backdrop style={{ opacity: 0.75 + Math.min(0.25, energy) }} />
       </div>
 

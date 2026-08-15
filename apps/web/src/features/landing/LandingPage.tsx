@@ -95,7 +95,7 @@ export function LandingPage() {
 
   return (
     <div className="relative min-h-full">
-      <div ref={orbRef} className="pointer-events-none fixed inset-0 -z-10 will-change-transform">
+      <div ref={orbRef} className="pointer-events-none fixed -inset-[20%] -z-10 will-change-transform">
         <Backdrop />
       </div>
 
