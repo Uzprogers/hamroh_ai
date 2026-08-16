@@ -80,9 +80,14 @@ export function GroupDialog({ onClose, onCreated }: { onClose: () => void; onCre
           <p className={`mt-2 text-start text-xs ${nameInvalid ? "text-coral" : "text-muted"}`}>
             {t(nameInvalid && naming.nameInvalid ? naming.nameInvalid : naming.nameHint)}
           </p>
+          {naming.deriveLevel && naming.levelShort && naming.levelHint && form.grade !== null && (
+            <p className="mt-1.5 text-start text-xs text-teal">
+              {form.grade}-{t(naming.levelShort)} · {t(naming.levelHint)}
+            </p>
+          )}
         </div>
 
-        {naming.levelLabel && naming.levelHint && (
+        {!naming.deriveLevel && naming.levelLabel && naming.levelHint && (
         <div>
           <span className="label">{t(naming.levelLabel)}</span>
           <div className="flex flex-wrap gap-2">

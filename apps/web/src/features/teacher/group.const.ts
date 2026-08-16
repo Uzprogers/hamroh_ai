@@ -7,6 +7,7 @@ export interface GroupNaming {
   nameHint: TranslationKey;
   nameInvalid: TranslationKey | null;
   levelLabel: TranslationKey | null;
+  levelShort: TranslationKey | null;
   levelHint: TranslationKey | null;
   levels: number[];
   deriveLevel: boolean;
@@ -22,6 +23,7 @@ export const GROUP_NAMING: Record<InstitutionType, GroupNaming> = {
     nameHint: "teacher.className.hint",
     nameInvalid: "teacher.className.invalid",
     levelLabel: "teacher.grade",
+    levelShort: "teacher.gradeShort",
     levelHint: "teacher.grade.hint",
     levels: SCHOOL_GRADES,
     deriveLevel: true,
@@ -32,6 +34,7 @@ export const GROUP_NAMING: Record<InstitutionType, GroupNaming> = {
     nameHint: "teacher.groupName.hint",
     nameInvalid: null,
     levelLabel: "teacher.course",
+    levelShort: "teacher.courseShort",
     levelHint: "teacher.course.hint",
     levels: UNIVERSITY_COURSES,
     deriveLevel: false,
@@ -42,6 +45,7 @@ export const GROUP_NAMING: Record<InstitutionType, GroupNaming> = {
     nameHint: "teacher.groupName.tutoring",
     nameInvalid: null,
     levelLabel: null,
+    levelShort: null,
     levelHint: null,
     levels: [],
     deriveLevel: false,

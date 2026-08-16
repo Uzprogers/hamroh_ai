@@ -75,7 +75,7 @@ async function run(): Promise<void> {
 
   logger.log("Generating lesson with AI...");
   const { lesson, assignments } = await lessonService.create(teacher.user.id, Locale.UZ, {
-    group_id: group.id,
+    group_ids: [group.id],
     topic: "Past Simple: o'tgan zamon haqida gapirish",
     note: "O'quvchilar o'tgan hafta bo'lib o'tgan voqealarni yozma va og'zaki bayon qilishi kerak",
   });

@@ -1,6 +1,11 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { LessonOrmEntity, PlanStep } from "../../infrastructure/typeorm/lesson.orm-entity";
 import { AssignmentOrmEntity, Criterion } from "../../infrastructure/typeorm/assignment.orm-entity";
 import { GroupOrmEntity } from "../../infrastructure/typeorm/group.orm-entity";
@@ -61,16 +66,15 @@ export class LessonService {
   ) {}
 
   async create(teacherId: string, locale: Locale, dto: CreateLessonDto) {
-    const group = await this.groupRepo.findOne({ where: { id: dto.group_id } });
-    if (!group) throw new NotFoundException("GROUP_NOT_FOUND");
-    if (group.teacher_id !== teacherId) throw new ForbiddenException("NOT_GROUP_OWNER");
+    const groups = await this.ownedGroups(teacherId, dto.group_ids);
+    const [first] = groups;
 
     const generated = await this.ai.json<GeneratedLesson>(
       `${SYSTEM_PROMPT}\n\n${LANGUAGE_INSTRUCTION[locale]}`,
       [
-        `Subject: ${group.subject}`,
-        `Group: ${group.name}`,
-        `Institution: ${INSTITUTION_PROMPT_LABEL[group.institution_type]}`,
+        `Subject: ${first.subject}`,
+        `Group: ${groups.map((group) => group.name).join(", ")}`,
+        `Institution: ${INSTITUTION_PROMPT_LABEL[first.institution_type]}`,
         `Topic: ${dto.topic}`,
         dto.note ? `Teacher note: ${dto.note}` : "",
       ]
@@ -78,32 +82,57 @@ export class LessonService {
         .join("\n"),
     );
 
-    const lesson = await this.lessonRepo.save(
-      this.lessonRepo.create({
-        group_id: group.id,
-        teacher_id: teacherId,
-        topic: dto.topic,
-        objective: generated.objective,
-        plan: generated.plan ?? [],
-        status: LessonStatus.DRAFT,
-      }),
-    );
-
-    const assignments = await this.assignmentRepo.save(
-      (generated.assignments ?? []).map((a, index) =>
-        this.assignmentRepo.create({
-          lesson_id: lesson.id,
-          type: a.type,
-          question: a.question,
-          expected_answer: a.expected_answer,
-          criteria: a.criteria ?? [],
-          max_score: a.max_score ?? 10,
-          order_index: index,
+    const lessons = await this.lessonRepo.save(
+      groups.map((group) =>
+        this.lessonRepo.create({
+          group_id: group.id,
+          teacher_id: teacherId,
+          topic: dto.topic,
+          objective: generated.objective,
+          plan: generated.plan ?? [],
+          status: LessonStatus.DRAFT,
         }),
       ),
     );
 
-    return { lesson, assignments };
+    const assignments = await this.assignmentRepo.save(
+      lessons.flatMap((lesson) =>
+        (generated.assignments ?? []).map((a, index) =>
+          this.assignmentRepo.create({
+            lesson_id: lesson.id,
+            type: a.type,
+            question: a.question,
+            expected_answer: a.expected_answer,
+            criteria: a.criteria ?? [],
+            max_score: a.max_score ?? 10,
+            order_index: index,
+          }),
+        ),
+      ),
+    );
+
+    return {
+      lessons,
+      lesson: lessons[0],
+      assignments: assignments.filter((a) => a.lesson_id === lessons[0].id),
+    };
+  }
+
+  private async ownedGroups(teacherId: string, ids: string[]): Promise<GroupOrmEntity[]> {
+    const unique = [...new Set(ids)];
+    const groups = await this.groupRepo.find({ where: { id: In(unique) } });
+    if (groups.length !== unique.length) throw new NotFoundException("GROUP_NOT_FOUND");
+    if (groups.some((group) => group.teacher_id !== teacherId)) {
+      throw new ForbiddenException("NOT_GROUP_OWNER");
+    }
+
+    const [first] = groups;
+    const mixed = groups.some(
+      (group) => group.subject !== first.subject || group.grade_level !== first.grade_level,
+    );
+    if (mixed) throw new BadRequestException("GROUPS_NOT_COMPATIBLE");
+
+    return groups;
   }
 
   async listForTeacher(teacherId: string) {

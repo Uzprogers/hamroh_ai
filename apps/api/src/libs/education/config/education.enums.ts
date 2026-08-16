@@ -28,3 +28,5 @@ export const GROUP_CODE_ATTEMPTS = 20;
 
 export const GRADE_LEVEL_MIN = 1;
 export const GRADE_LEVEL_MAX = 16;
+
+export const LESSON_GROUPS_MAX = 12;

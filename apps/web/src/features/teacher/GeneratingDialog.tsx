@@ -13,7 +13,15 @@ const STEPS: TranslationKey[] = [
 
 const STEP_MS = 2600;
 
-export function GeneratingDialog({ topic, ready = false }: { topic: string; ready?: boolean }) {
+export function GeneratingDialog({
+  topic,
+  classes = 1,
+  ready = false,
+}: {
+  topic: string;
+  classes?: number;
+  ready?: boolean;
+}) {
   const { t } = useI18n();
   const [step, setStep] = useState(0);
 
@@ -50,6 +58,11 @@ export function GeneratingDialog({ topic, ready = false }: { topic: string; read
           {t(ready ? "teacher.generating.done" : "teacher.generating")}
         </h3>
         <p className="relative mt-1 truncate text-center text-xs text-muted">{topic}</p>
+        {classes > 1 && (
+          <p className="relative mt-1 text-center text-xs text-teal">
+            {classes} {t("teacher.groupCount")}
+          </p>
+        )}
 
         <ol className="relative mt-6 space-y-2.5">
           {STEPS.map((key, index) => {
