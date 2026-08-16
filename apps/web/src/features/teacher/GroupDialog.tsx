@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Modal } from "../../components/Modal";
-import { GRADE_OPTIONS, gradeFromName } from "./group.const";
+import { GROUP_NAMING, gradeFromName } from "./group.const";
 import { TUTOR_COURSES } from "../auth/onboarding.courses";
 import { api, ApiError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
@@ -20,13 +20,19 @@ export function GroupDialog({ onClose, onCreated }: { onClose: () => void; onCre
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const isSchool = (user?.institution_type ?? "SCHOOL") === "SCHOOL";
-  const namedClass = gradeFromName(form.name) !== null;
-  const nameInvalid = isSchool && form.name.trim().length > 0 && !namedClass;
+  const naming = GROUP_NAMING[user?.institution_type ?? "SCHOOL"];
+  const nameInvalid =
+    Boolean(naming.nameInvalid) &&
+    form.name.trim().length > 0 &&
+    gradeFromName(form.name, naming.levels) === null;
   const ready = form.name.trim().length > 0 && form.subject.trim().length > 0 && !nameInvalid;
 
   const setName = (name: string) =>
-    setForm((prev) => ({ ...prev, name, grade: gradeFromName(name) ?? prev.grade }));
+    setForm((prev) => ({
+      ...prev,
+      name,
+      grade: naming.deriveLevel ? (gradeFromName(name, naming.levels) ?? prev.grade) : prev.grade,
+    }));
 
   const submit = async () => {
     if (!ready) return;
@@ -62,28 +68,25 @@ export function GroupDialog({ onClose, onCreated }: { onClose: () => void; onCre
       <div className="space-y-4">
         <div>
           <label className="label" htmlFor="group_name">
-            {t(isSchool ? "teacher.className" : "teacher.groupName")}
+            {t(naming.nameLabel)}
           </label>
           <input
             id="group_name"
             className={`field ${nameInvalid ? "border-coral/60" : ""}`}
             value={form.name}
-            placeholder="9-A"
+            placeholder={naming.namePlaceholder}
             onChange={(event) => setName(event.target.value)}
           />
-          {isSchool && (
-            <p
-              className={`mt-2 text-start text-xs ${nameInvalid ? "text-coral" : "text-muted"}`}
-            >
-              {t(nameInvalid ? "teacher.className.invalid" : "teacher.className.hint")}
-            </p>
-          )}
+          <p className={`mt-2 text-start text-xs ${nameInvalid ? "text-coral" : "text-muted"}`}>
+            {t(nameInvalid && naming.nameInvalid ? naming.nameInvalid : naming.nameHint)}
+          </p>
         </div>
 
+        {naming.levelLabel && naming.levelHint && (
         <div>
-          <span className="label">{t("teacher.grade")}</span>
+          <span className="label">{t(naming.levelLabel)}</span>
           <div className="flex flex-wrap gap-2">
-            {GRADE_OPTIONS.map((grade) => (
+            {naming.levels.map((grade) => (
               <button
                 key={grade}
                 type="button"
@@ -109,8 +112,9 @@ export function GroupDialog({ onClose, onCreated }: { onClose: () => void; onCre
               {t("teacher.grade.any")}
             </button>
           </div>
-          <p className="mt-2 text-start text-xs text-muted">{t("teacher.grade.hint")}</p>
+          <p className="mt-2 text-start text-xs text-muted">{t(naming.levelHint)}</p>
         </div>
+        )}
 
         <div>
           <label className="label" htmlFor="group_subject">
