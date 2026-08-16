@@ -18,7 +18,13 @@ export function MistakeDetailDialog({
   const share = total > 0 ? (mistake.count / total) * 100 : 0;
 
   return (
-    <Modal icon="spark" title={mistake.label} subtitle={t("group.mistakes.top")} onClose={onClose}>
+    <Modal
+      icon="spark"
+      size="full"
+      title={mistake.label}
+      subtitle={t("group.mistakes.top")}
+      onClose={onClose}
+    >
       <div className="space-y-6">
         <div className="flex flex-wrap items-center gap-4">
           <ShareRing percent={share} label={t("group.mistakes")} />

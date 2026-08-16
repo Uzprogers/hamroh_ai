@@ -50,6 +50,7 @@ export function StudentDetailDialog({
 
   return (
     <Modal
+      size="full"
       icon="groups"
       title={detail?.student.name ?? studentName}
       subtitle={t("group.detail")}
@@ -72,7 +73,7 @@ export function StudentDetailDialog({
       {!failed && detail && (
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-4">
-            <StatRing percent={detail.average_percent} label={t("group.average")} />
+            <StatRing percent={detail.average_percent} label={t("profile.average")} />
             <div className="min-w-0 flex-1 space-y-2">
               <GrowthChip value={detail.growth_percent} />
               <div className="text-start text-xs text-muted">
@@ -85,32 +86,34 @@ export function StudentDetailDialog({
           {empty ? (
             <p className="text-start text-sm text-muted">{t("group.student.empty")}</p>
           ) : (
-            <>
-              {timeline.length > 0 && (
-                <Section title={t("group.timeline")}>
-                  <TimelineChart points={timeline} />
-                </Section>
-              )}
+            <div className="grid gap-5 lg:grid-cols-[1.25fr_1fr] lg:items-start">
+              <div className="min-w-0 space-y-5">
+                {timeline.length > 0 && (
+                  <Section title={t("group.timeline")}>
+                    <TimelineChart points={timeline} />
+                  </Section>
+                )}
 
-              {criteria.length > 0 && (
-                <Section title={t("group.criteria")}>
-                  <div className="space-y-3.5">
-                    {criteria.map((criterion, index) => (
-                      <MetricBar
-                        key={criterion.name}
-                        label={criterion.name}
-                        value={`${criterion.average_percent}%`}
-                        percent={criterion.average_percent}
-                        delayMs={index * 60}
-                      />
-                    ))}
-                  </div>
-                </Section>
-              )}
+                {criteria.length > 0 && (
+                  <Section title={t("group.criteria")}>
+                    <div className="space-y-3.5">
+                      {criteria.map((criterion, index) => (
+                        <MetricBar
+                          key={criterion.name}
+                          label={criterion.name}
+                          value={`${criterion.average_percent}%`}
+                          percent={criterion.average_percent}
+                          delayMs={index * 60}
+                        />
+                      ))}
+                    </div>
+                  </Section>
+                )}
+              </div>
 
               {mistakes.length > 0 && (
                 <Section title={t("group.mistakes")}>
-                  <ul className="max-h-80 space-y-3 overflow-y-auto pe-1">
+                  <ul className="max-h-[520px] space-y-3 overflow-y-auto pe-1">
                     {mistakes.map((mistake, index) => (
                       <MistakeCard
                         key={`${mistake.fragment}-${index}`}
@@ -125,7 +128,7 @@ export function StudentDetailDialog({
                   </ul>
                 </Section>
               )}
-            </>
+            </div>
           )}
         </div>
       )}

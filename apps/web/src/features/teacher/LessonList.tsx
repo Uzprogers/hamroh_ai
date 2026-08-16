@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useI18n } from "../../i18n/i18n";
+import type { TranslationKey } from "../../i18n/dictionary";
 import type { Lesson } from "../../lib/types";
 
 export function LessonList({ lessons }: { lessons: Lesson[] }) {
@@ -24,7 +25,7 @@ export function LessonList({ lessons }: { lessons: Lesson[] }) {
           <span
             className={`chip shrink-0 ${lesson.status === "ACTIVE" ? "border-teal/40 text-teal" : ""}`}
           >
-            {lesson.status === "ACTIVE" ? t("teacher.published") : lesson.status}
+            {t(`lesson.status.${lesson.status}` as TranslationKey)}
           </span>
 
           <Link

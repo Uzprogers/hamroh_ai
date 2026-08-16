@@ -3,16 +3,23 @@ import { createPortal } from "react-dom";
 import { NavIcon, type NavIconName } from "./NavIcon";
 import { useI18n } from "../i18n/i18n";
 
+const SIZES = {
+  md: "max-w-[520px]",
+  full: "max-w-5xl",
+} as const;
+
 export function Modal({
   icon,
   title,
   subtitle,
+  size = "md",
   onClose,
   children,
 }: {
   icon: NavIconName;
   title: string;
   subtitle?: string;
+  size?: keyof typeof SIZES;
   onClose: () => void;
   children: ReactNode;
 }) {
@@ -33,7 +40,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         onClick={(event) => event.stopPropagation()}
-        className="surface relative w-full max-w-[520px] animate-rise p-6 text-start sm:p-7"
+        className={`surface relative w-full ${SIZES[size]} animate-rise p-6 text-start sm:p-7`}
       >
         <span className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-br from-teal/20 via-transparent to-azure/20 opacity-70" />
 

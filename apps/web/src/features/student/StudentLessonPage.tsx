@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
+import type { TranslationKey } from "../../i18n/dictionary";
 import type { Assignment, Grade, Lesson } from "../../lib/types";
 
 export function StudentLessonPage() {
@@ -62,7 +63,9 @@ export function StudentLessonPage() {
           return (
             <section key={assignment.id} className="surface p-6">
               <div className="flex items-center gap-2">
-                <span className="chip border-azure/40 text-azure">{assignment.type}</span>
+                <span className="chip border-azure/40 text-azure">
+                  {t(`assignment.type.${assignment.type}` as TranslationKey)}
+                </span>
                 <span className="text-xs text-muted">
                   {assignment.max_score} {t("student.score")}
                 </span>

@@ -4,6 +4,7 @@ import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
 import { LessonPdfButton } from "./LessonPdfButton";
+import type { TranslationKey } from "../../i18n/dictionary";
 import type { Assignment, GroupSummaryRow, Lesson, StudentResult } from "../../lib/types";
 
 export function LessonPage() {
@@ -97,7 +98,9 @@ export function LessonPage() {
             {assignments.map((assignment) => (
               <div key={assignment.id} className="rounded-xl border border-edge/60 p-4">
                 <div className="flex items-center gap-2">
-                  <span className="chip border-azure/40 text-azure">{assignment.type}</span>
+                  <span className="chip border-azure/40 text-azure">
+                  {t(`assignment.type.${assignment.type}` as TranslationKey)}
+                </span>
                   <span className="text-xs text-muted">{assignment.max_score} {t("student.score")}</span>
                 </div>
                 <p className="mt-3 text-sm">{assignment.question}</p>
