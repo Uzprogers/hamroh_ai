@@ -18,6 +18,9 @@ const PATHS = {
     "M18 15l.8 1.8 1.8.8-1.8.8-.8 1.8-.8-1.8-1.8-.8 1.8-.8.8-1.8z",
   ],
   close: ["M6 6l12 12", "M18 6L6 18"],
+  chevron: ["M9.5 6l6 6-6 6"],
+  caret: ["M6 9.5l6 6 6-6"],
+  check: ["M5 12.5l4.5 4.5L19 7"],
 } as const;
 
 export type NavIconName = keyof typeof PATHS;

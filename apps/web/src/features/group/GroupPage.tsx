@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Bars3D } from "./Bars3D";
 import { GrowthChip, GrowthList } from "./GrowthList";
-import { MetricBar } from "./MetricBar";
 import { MistakeDetailDialog } from "./MistakeDetailDialog";
+import { MistakeTallyList } from "./MistakeTallyList";
 import { Panel } from "./Section";
 import { StudentDetailDialog } from "./StudentDetailDialog";
 import { TopicFilter } from "./TopicFilter";
@@ -124,7 +124,6 @@ export function GroupPage() {
 
   const lessons = data.lessons ?? [];
   const mistakes = data.top_mistakes;
-  const mistakePeak = mistakes.length > 0 ? mistakes[0].count : 0;
   const mistakeTotal = mistakes.reduce((sum, mistake) => sum + mistake.count, 0);
   const bars = data.students.slice(0, CHART_LIMIT).map((student) => ({
     id: student.student_id,
@@ -195,30 +194,19 @@ export function GroupPage() {
                 <GrowthList leaders={data.growth_leaders} />
               </Panel>
 
-              <Panel title={t("group.mistakes.top")}>
-                {mistakes.length === 0 ? (
-                  <p className="text-start text-sm text-muted">{t("group.empty")}</p>
-                ) : (
-                  <ul className="space-y-3.5">
-                    {mistakes.map((mistake, index) => (
-                      <li key={mistake.label}>
-                        <button
-                          type="button"
-                          onClick={() => setOpenMistake(mistake)}
-                          className="w-full rounded-xl px-1 py-1 text-start transition hover:bg-panel/60 focus:outline-none focus-visible:bg-panel/60"
-                        >
-                          <MetricBar
-                            label={mistake.label}
-                            value={String(mistake.count)}
-                            percent={mistakePeak > 0 ? (mistake.count / mistakePeak) * 100 : 0}
-                            tone="warm"
-                            delayMs={index * 60}
-                          />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+              <Panel
+                title={t("group.mistakes.top")}
+                aside={
+                  mistakeTotal > 0 ? (
+                    <span className="chip border-coral/40 font-mono text-coral">{mistakeTotal}</span>
+                  ) : undefined
+                }
+              >
+                <MistakeTallyList
+                  mistakes={mistakes}
+                  total={mistakeTotal}
+                  onOpen={setOpenMistake}
+                />
               </Panel>
             </div>
           </>
