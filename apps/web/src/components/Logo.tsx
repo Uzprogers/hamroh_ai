@@ -6,21 +6,30 @@ export function Logo({ size = 34 }: { size?: number }) {
           <stop stopColor="#2AD5C3" />
           <stop offset="1" stopColor="#5586FD" />
         </linearGradient>
+        <mask id="hamroh-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+          <rect width="64" height="64" fill="#fff" />
+          <g fill="#000" stroke="#000" strokeLinecap="round">
+            <circle cx="46" cy="33" r="7.5" strokeWidth="6" />
+            <path d="M46 46v5" strokeWidth="25" />
+          </g>
+        </mask>
       </defs>
-      <circle cx="27" cy="14" r="8" fill="url(#hamroh-mark)" />
-      <path
-        d="M27 24c-8 0-13 6-13 14v18a5 5 0 0 0 10 0V40"
+
+      <g
+        fill="url(#hamroh-mark)"
         stroke="url(#hamroh-mark)"
-        strokeWidth="9"
         strokeLinecap="round"
-      />
-      <circle cx="44" cy="30" r="6" fill="url(#hamroh-mark)" />
-      <path
-        d="M44 38c-5 0-8 4-8 9v9a4 4 0 0 0 8 0"
-        stroke="url(#hamroh-mark)"
-        strokeWidth="7"
-        strokeLinecap="round"
-      />
+        strokeLinejoin="round"
+      >
+        <g mask="url(#hamroh-cut)">
+          <circle cx="30" cy="15" r="9.5" />
+          <path d="M30 27C22 31 19 39 19 50" fill="none" strokeWidth="19" />
+          <path d="M34 20C48 23 49 36 39 45" fill="none" strokeWidth="8" />
+        </g>
+
+        <circle cx="46" cy="33" r="7.5" />
+        <path d="M46 46v5" strokeWidth="19" />
+      </g>
     </svg>
   );
 }
