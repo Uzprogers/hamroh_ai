@@ -60,6 +60,10 @@ export default {
           "0%, 100%": { transform: "translateY(0) rotate(-3deg)", opacity: "0.35" },
           "50%": { transform: "translateY(-26px) rotate(3deg)", opacity: "1" },
         },
+        scanLine: {
+          "0%, 100%": { transform: "translateY(0)", opacity: "0.4" },
+          "50%": { transform: "translateY(152px)", opacity: "1" },
+        },
       },
       animation: {
         rise: "rise .5s cubic-bezier(.2,.8,.2,1) both",
@@ -71,6 +75,7 @@ export default {
         driftB: "driftB 32s ease-in-out infinite",
         driftC: "driftC 38s ease-in-out infinite",
         glyphFloat: "glyphFloat 20s ease-in-out infinite",
+        scanLine: "scanLine 2.4s ease-in-out infinite",
       },
     },
   },

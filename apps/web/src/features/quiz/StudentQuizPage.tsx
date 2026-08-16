@@ -4,6 +4,8 @@ import { ApiError, api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
 import { MathText } from "../../components/MathText";
+import { CodeInput } from "../../components/CodeInput";
+import { QrScanner } from "./QrScanner";
 import { QuizLeaderboard } from "./QuizLeaderboard";
 import { QuizTimer } from "./QuizTimer";
 import { useQuizRoom } from "./useQuizRoom";
@@ -148,24 +150,47 @@ export function StudentQuizPage() {
   if (!summary) {
     return (
       <div className="mx-auto max-w-md text-start">
-        <section className="surface animate-rise p-7">
-          <h1 className="font-display text-2xl font-extrabold">{t("quiz.title")}</h1>
-          <p className="mt-2 text-sm text-muted">{t("quiz.subtitle")}</p>
+        <section className="surface animate-rise relative overflow-hidden p-7">
+          <span className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-gradient-to-br from-teal/25 to-azure/20 blur-3xl" />
 
-          <form className="mt-6 space-y-4" onSubmit={submitPin}>
+          <div className="relative">
+            <span className="chip border-teal/40 text-teal">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-pulseRing rounded-full bg-teal" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-teal" />
+              </span>
+              {t("quiz.live")}
+            </span>
+            <h1 className="mt-3 font-display text-2xl font-extrabold">{t("quiz.title")}</h1>
+            <p className="mt-1.5 text-sm text-muted">{t("quiz.subtitle")}</p>
+          </div>
+
+          <div className="relative mt-6">
+            <QrScanner
+              onFound={(pin) => {
+                setPinInput(pin);
+                void lookup(pin);
+              }}
+            />
+          </div>
+
+          <div className="relative my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-edge" />
+            <span className="text-xs uppercase tracking-wide text-muted">{t("quiz.or")}</span>
+            <span className="h-px flex-1 bg-edge" />
+          </div>
+
+          <form className="relative space-y-4" onSubmit={submitPin}>
             <div>
               <span className="label">{t("quiz.pin")}</span>
-              <input
-                className="field text-center font-mono text-3xl font-extrabold tracking-[0.4em]"
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder={t("quiz.enterPin")}
-                maxLength={QUIZ_PIN_LENGTH}
+              <CodeInput
                 value={pinInput}
-                onChange={(event) =>
-                  setPinInput(event.target.value.replace(/\D/g, "").slice(0, QUIZ_PIN_LENGTH))
-                }
+                onChange={setPinInput}
+                length={QUIZ_PIN_LENGTH}
+                numeric
+                autoFocus={false}
               />
+              <p className="mt-2.5 text-start text-xs text-muted">{t("quiz.enterPin")}</p>
             </div>
 
             <button
@@ -176,7 +201,7 @@ export function StudentQuizPage() {
               {t("quiz.join")}
             </button>
 
-            {errorKey && <p className="text-sm text-coral">{t(errorKey)}</p>}
+            {errorKey && <p className="text-start text-sm text-coral">{t(errorKey)}</p>}
           </form>
         </section>
       </div>
