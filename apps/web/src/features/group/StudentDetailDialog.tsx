@@ -7,7 +7,7 @@ import { useI18n } from "../../i18n/i18n";
 import { GrowthChip } from "./GrowthList";
 import { MetricBar } from "./MetricBar";
 import { MistakeCard, SeverityCounts } from "./MistakeCard";
-import { Section } from "./Section";
+import { Section } from "../../components/Panel";
 import { TimelineChart } from "./TimelineChart";
 import type { GroupStudentDetail } from "./group.types";
 

@@ -17,16 +17,16 @@ import {
   GROUP_CODE_LENGTH,
   MemberSource,
 } from "../../config/education.enums";
-import { GroupMemberRow, SchoolGroupRow } from "../types/group-join.types";
+import { GroupMemberRow, StudentGroupRow } from "../types/group-join.types";
 
-interface SchoolGroupRaw {
+interface StudentGroupRaw {
   id: string;
   name: string;
   subject: string;
+  grade_level: number | null;
   first_name: string;
   last_name: string | null;
   member_count: string;
-  is_member: boolean;
 }
 
 @Injectable()
@@ -68,12 +68,30 @@ export class GroupService {
     return groups.map((g) => ({ ...g, member_count: byGroup.get(g.id) ?? 0 }));
   }
 
-  async listForStudent(studentId: string) {
-    return this.groupRepo
+  async listForStudent(studentId: string): Promise<StudentGroupRow[]> {
+    const rows = await this.groupRepo
       .createQueryBuilder("g")
       .innerJoin("group_members", "m", "m.group_id = g.id")
+      .innerJoin(UserOrmEntity, "t", "t.id = g.teacher_id")
+      .select("g.id", "id")
+      .addSelect("g.name", "name")
+      .addSelect("g.subject", "subject")
+      .addSelect("g.grade_level", "grade_level")
+      .addSelect("t.first_name", "first_name")
+      .addSelect("t.last_name", "last_name")
+      .addSelect("(SELECT COUNT(*) FROM group_members c WHERE c.group_id = g.id)", "member_count")
       .where("m.student_id = :studentId", { studentId })
-      .getMany();
+      .orderBy("m.joined_at", "DESC")
+      .getRawMany<StudentGroupRaw>();
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      subject: row.subject,
+      grade_level: row.grade_level,
+      teacher_name: [row.first_name, row.last_name].filter(Boolean).join(" ").trim(),
+      member_count: Number(row.member_count),
+    }));
   }
 
   async members(groupId: string, teacherId: string): Promise<GroupMemberRow[]> {
@@ -134,61 +152,9 @@ export class GroupService {
     return this.joinGroup(studentId, group.id, MemberSource.CODE);
   }
 
-  async joinSchoolGroup(studentId: string, groupId: string): Promise<GroupOrmEntity> {
-    const student = await this.requireStudent(studentId);
-    const group = await this.groupRepo.findOne({ where: { id: groupId } });
-    if (!group) throw new NotFoundException("GROUP_NOT_FOUND");
-
-    const teacher = await this.userRepo.findOne({ where: { id: group.teacher_id } });
-    if (!this.sameSchool(teacher?.institution_name ?? null, student.institution_name)) {
-      throw new ForbiddenException("GROUP_NOT_IN_SCHOOL");
-    }
-
-    return this.joinGroup(studentId, group.id, MemberSource.SCHOOL);
-  }
-
   async schoolOf(teacherId: string): Promise<string> {
     const teacher = await this.userRepo.findOne({ where: { id: teacherId } });
     return teacher?.institution_name ?? "";
-  }
-
-  async schoolGroups(studentId: string): Promise<SchoolGroupRow[]> {
-    const student = await this.requireStudent(studentId);
-    const school = this.normalize(student.institution_name);
-    if (!school) return [];
-
-    const grade = this.gradeOf(student.grade_level);
-
-    const rows = await this.groupRepo
-      .createQueryBuilder("g")
-      .innerJoin(UserOrmEntity, "t", "t.id = g.teacher_id")
-      .select("g.id", "id")
-      .addSelect("g.name", "name")
-      .addSelect("g.subject", "subject")
-      .addSelect("t.first_name", "first_name")
-      .addSelect("t.last_name", "last_name")
-      .addSelect(
-        "(SELECT COUNT(*) FROM group_members m WHERE m.group_id = g.id)",
-        "member_count",
-      )
-      .addSelect(
-        `EXISTS (SELECT 1 FROM group_members m WHERE m.group_id = g.id AND m.student_id = :studentId)`,
-        "is_member",
-      )
-      .where("lower(btrim(t.institution_name)) = :school", { school })
-      .andWhere("(g.grade_level IS NULL OR g.grade_level = :grade)", { grade })
-      .setParameter("studentId", studentId)
-      .orderBy("g.created_at", "DESC")
-      .getRawMany<SchoolGroupRaw>();
-
-    return rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      subject: row.subject,
-      teacher_name: [row.first_name, row.last_name].filter(Boolean).join(" ").trim(),
-      member_count: Number(row.member_count),
-      is_member: row.is_member,
-    }));
   }
 
   async assertOwnership(groupId: string, teacherId: string): Promise<GroupOrmEntity> {

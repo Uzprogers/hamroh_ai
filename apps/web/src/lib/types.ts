@@ -97,13 +97,13 @@ export interface Group {
 
 export type MemberSource = "TEACHER" | "PIN" | "CODE" | "SCHOOL";
 
-export interface SchoolGroup {
+export interface StudentGroup {
   id: string;
   name: string;
   subject: string;
+  grade_level: number | null;
   teacher_name: string;
   member_count: number;
-  is_member: boolean;
 }
 
 export interface GroupMember {

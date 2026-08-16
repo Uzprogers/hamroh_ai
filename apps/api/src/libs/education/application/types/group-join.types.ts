@@ -1,12 +1,12 @@
 import { MemberSource } from "../../config/education.enums";
 
-export interface SchoolGroupRow {
+export interface StudentGroupRow {
   id: string;
   name: string;
   subject: string;
+  grade_level: number | null;
   teacher_name: string;
   member_count: number;
-  is_member: boolean;
 }
 
 export interface GroupMemberRow {

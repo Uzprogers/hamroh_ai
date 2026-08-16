@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
-import { Panel } from "./Section";
+import { Panel } from "../../components/Panel";
 import type { TranslationKey } from "../../i18n/dictionary";
 import type { GroupMember } from "../../lib/types";
 

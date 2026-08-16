@@ -45,22 +45,10 @@ export class GroupController {
     return this.groupService.listForStudent(user.id);
   }
 
-  @Get("school")
-  @Roles(Role.STUDENT)
-  school(@CurrentUser() user: RequestUser) {
-    return this.groupService.schoolGroups(user.id);
-  }
-
   @Post("join")
   @Roles(Role.STUDENT)
   join(@CurrentUser() user: RequestUser, @Body() dto: JoinGroupDto) {
     return this.groupService.joinByCode(user.id, dto.code);
-  }
-
-  @Post(":id/join")
-  @Roles(Role.STUDENT)
-  joinSchoolGroup(@CurrentUser() user: RequestUser, @Param("id", ParseUUIDPipe) id: string) {
-    return this.groupService.joinSchoolGroup(user.id, id);
   }
 
   @Delete(":id/members/:studentId")

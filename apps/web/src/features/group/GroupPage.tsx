@@ -5,7 +5,7 @@ import { GrowthChip, GrowthList } from "./GrowthList";
 import { MistakeDetailDialog } from "./MistakeDetailDialog";
 import { MistakeTallyList } from "./MistakeTallyList";
 import { MembersPanel } from "./MembersPanel";
-import { Panel } from "./Section";
+import { Panel } from "../../components/Panel";
 import { StudentDetailDialog } from "./StudentDetailDialog";
 import { TopicFilter } from "./TopicFilter";
 import { StatRing } from "../profile/StatRing";

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { NavLink, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { GroupDialog } from "./GroupDialog";
 import { GroupList } from "./GroupList";
 import { LessonDialog } from "./LessonDialog";
@@ -7,24 +7,12 @@ import { LessonList } from "./LessonList";
 import { RecentLessons } from "./RecentLessons";
 import { TEACHER_NAV } from "./teacher.nav";
 import { NavIcon } from "../../components/NavIcon";
+import { Panel } from "../../components/Panel";
+import { WorkspaceNav } from "../../components/WorkspaceNav";
 import { api, ApiError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n, useTranslateError } from "../../i18n/i18n";
 import type { Group, Lesson } from "../../lib/types";
-
-function Section({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <section className="surface p-5 sm:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="font-display text-sm font-extrabold uppercase tracking-wide text-muted">
-          {title}
-        </h2>
-        {action}
-      </div>
-      <div className="mt-4">{children}</div>
-    </section>
-  );
-}
 
 export function TeacherWorkspace() {
   const { t } = useI18n();
@@ -75,28 +63,7 @@ export function TeacherWorkspace() {
   return (
     <div className="grid gap-6 py-6 lg:grid-cols-[236px_1fr]">
       <aside className="lg:sticky lg:top-6 lg:self-start">
-        <nav className="surface flex gap-1 overflow-x-auto p-2 lg:flex-col">
-          {TEACHER_NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === "/"}
-              className={({ isActive }) =>
-                `flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
-                  isActive
-                    ? "bg-gradient-to-r from-teal/20 to-azure/10 text-teal"
-                    : "text-muted hover:bg-panel hover:text-paper"
-                }`
-              }
-            >
-              <NavIcon name={item.icon} />
-              <span className="flex-1 text-start">{t(item.label)}</span>
-              {counts[item.to] !== undefined && (
-                <span className="font-mono text-xs text-muted">{counts[item.to]}</span>
-              )}
-            </NavLink>
-          ))}
-        </nav>
+        <WorkspaceNav items={TEACHER_NAV} counts={counts} />
 
         <div className="mt-3 grid gap-2">
           <button type="button" className="btn-primary w-full" onClick={() => setDialog("lesson")}>
@@ -147,29 +114,29 @@ export function TeacherWorkspace() {
           <Route
             path="/groups"
             element={
-              <Section title={t("teacher.groups")} action={newGroup}>
+              <Panel title={t("teacher.groups")} aside={newGroup}>
                 <GroupList groups={groups} />
-              </Section>
+              </Panel>
             }
           />
           <Route
             path="/lessons"
             element={
-              <Section title={t("teacher.lessons")} action={newLesson}>
+              <Panel title={t("teacher.lessons")} aside={newLesson}>
                 <LessonList lessons={lessons} groups={groups} />
-              </Section>
+              </Panel>
             }
           />
           <Route
             path="*"
             element={
               <div className="space-y-4">
-                <Section title={t("teacher.recent")} action={newLesson}>
+                <Panel title={t("teacher.recent")} aside={newLesson}>
                   <RecentLessons lessons={lessons} groups={groups} />
-                </Section>
-                <Section title={t("teacher.groups")} action={newGroup}>
+                </Panel>
+                <Panel title={t("teacher.groups")} aside={newGroup}>
                   <GroupList groups={groups} />
-                </Section>
+                </Panel>
               </div>
             }
           />

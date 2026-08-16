@@ -6,7 +6,7 @@ import { OnboardingPage } from "./features/auth/OnboardingPage";
 import { LandingPage } from "./features/landing/LandingPage";
 import { TeacherWorkspace } from "./features/teacher/TeacherWorkspace";
 import { LessonPage } from "./features/teacher/LessonPage";
-import { StudentHome } from "./features/student/StudentHome";
+import { StudentWorkspace } from "./features/student/StudentWorkspace";
 import { StudentLessonPage } from "./features/student/StudentLessonPage";
 import { ProfilePage } from "./features/profile/ProfilePage";
 import { GroupPage } from "./features/group/GroupPage";
@@ -56,8 +56,7 @@ export function App() {
                 <Route path="/lesson/:id" element={<StudentLessonPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/quiz" element={<StudentQuizPage />} />
-                <Route path="/" element={<StudentHome />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<StudentWorkspace />} />
               </Routes>
             </AppShell>
           }
