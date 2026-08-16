@@ -76,4 +76,14 @@ export class GroupService {
     if (group.teacher_id !== teacherId) throw new ForbiddenException("NOT_GROUP_OWNER");
     return group;
   }
+
+  async assertStudentAccess(studentId: string, teacherId: string): Promise<void> {
+    const linked = await this.memberRepo
+      .createQueryBuilder("m")
+      .innerJoin("groups", "g", "g.id = m.group_id")
+      .where("m.student_id = :studentId", { studentId })
+      .andWhere("g.teacher_id = :teacherId", { teacherId })
+      .getCount();
+    if (!linked) throw new ForbiddenException("STUDENT_NOT_IN_GROUP");
+  }
 }

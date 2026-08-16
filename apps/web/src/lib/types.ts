@@ -43,6 +43,47 @@ export interface AuthResult {
   user: User;
 }
 
+export type ProfileMetricKey =
+  | "GROUPS"
+  | "STUDENTS"
+  | "LESSONS"
+  | "GRADED"
+  | "MAJOR_MISTAKES"
+  | "SUBMISSIONS"
+  | "MISTAKES"
+  | "SUBJECTS";
+
+export interface MetricValue {
+  key: ProfileMetricKey;
+  value: number;
+}
+
+export interface TrendPoint {
+  date: string;
+  count: number;
+}
+
+export interface BreakdownItem {
+  label: string;
+  average_percent: number;
+  submissions: number;
+}
+
+export interface HighlightItem {
+  label: string;
+  caption: string;
+  percent: number;
+}
+
+export interface ProfileStats {
+  role: Role;
+  average_percent: number;
+  metrics: MetricValue[];
+  trend: TrendPoint[];
+  breakdown: BreakdownItem[];
+  highlights: HighlightItem[];
+}
+
 export interface Group {
   id: string;
   teacher_id: string;

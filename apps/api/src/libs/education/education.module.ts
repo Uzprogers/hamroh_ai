@@ -11,9 +11,11 @@ import { GroupService } from "./application/services/group.service";
 import { LessonService } from "./application/services/lesson.service";
 import { GradingService } from "./application/services/grading.service";
 import { ResultsService } from "./application/services/results.service";
+import { AnalyticsService } from "./application/services/analytics.service";
 import { GroupController } from "./presentation/group.controller";
 import { LessonController } from "./presentation/lesson.controller";
 import { SubmissionController } from "./presentation/submission.controller";
+import { ProfileController } from "./presentation/profile.controller";
 import { AgentModule } from "../agent/agent.module";
 import { IdentityModule } from "../identity/identity.module";
 
@@ -31,8 +33,8 @@ import { IdentityModule } from "../identity/identity.module";
     AgentModule,
     IdentityModule,
   ],
-  controllers: [GroupController, LessonController, SubmissionController],
-  providers: [GroupService, LessonService, GradingService, ResultsService],
-  exports: [GroupService, LessonService, GradingService, ResultsService, TypeOrmModule],
+  controllers: [GroupController, LessonController, SubmissionController, ProfileController],
+  providers: [GroupService, LessonService, GradingService, ResultsService, AnalyticsService],
+  exports: [GroupService, LessonService, GradingService, ResultsService, AnalyticsService, TypeOrmModule],
 })
 export class EducationModule {}

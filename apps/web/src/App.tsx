@@ -8,6 +8,7 @@ import { TeacherHome } from "./features/teacher/TeacherHome";
 import { LessonPage } from "./features/teacher/LessonPage";
 import { StudentHome } from "./features/student/StudentHome";
 import { StudentLessonPage } from "./features/student/StudentLessonPage";
+import { ProfilePage } from "./features/profile/ProfilePage";
 import { SessionPage } from "./features/session/SessionPage";
 
 export function App() {
@@ -50,6 +51,7 @@ export function App() {
             <AppShell>
               <Routes>
                 <Route path="/lesson/:id" element={<StudentLessonPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/" element={<StudentHome />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
@@ -64,6 +66,7 @@ export function App() {
     <AppShell>
       <Routes>
         <Route path="/lesson/:id" element={<LessonPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/" element={<TeacherHome />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

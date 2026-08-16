@@ -90,7 +90,7 @@ export function GradePreview() {
     <div className="surface flex h-full w-full flex-col overflow-hidden p-5 sm:p-6">
       <span
         key={scenario.id}
-        className="pointer-events-none absolute inset-y-0 -left-16 w-32 animate-cardSweep bg-gradient-to-r from-transparent via-teal/15 to-transparent"
+        className="card-sweep pointer-events-none absolute inset-0 animate-cardSweep"
       />
 
       <div
@@ -189,7 +189,7 @@ export function GradePreview() {
             {position === index && (
               <span
                 key={scenario.id}
-                className="absolute inset-0 origin-left animate-previewSweep bg-gradient-to-r from-teal/30 to-azure/20"
+                className="absolute inset-x-0 bottom-0 h-[2px] origin-left animate-previewSweep bg-gradient-to-r from-teal to-azure"
               />
             )}
             <span className="relative">{t(item.tabKey)}</span>

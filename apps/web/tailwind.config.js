@@ -41,8 +41,8 @@ export default {
           to: { transform: "scaleX(1)" },
         },
         cardSweep: {
-          from: { transform: "translateX(-120%)" },
-          to: { transform: "translateX(120%)" },
+          from: { backgroundPosition: "140% 0" },
+          to: { backgroundPosition: "-40% 0" },
         },
         driftA: {
           "0%, 100%": { transform: "translate3d(0,0,0) scale(1)" },
@@ -66,7 +66,7 @@ export default {
         shimmer: "shimmer 1.6s infinite",
         pulseRing: "pulseRing 2s ease-out infinite",
         previewSweep: "previewSweep 7.6s linear forwards",
-        cardSweep: "cardSweep 1.1s cubic-bezier(.4,0,.2,1) forwards",
+        cardSweep: "cardSweep 1.2s cubic-bezier(.4,0,.2,1) forwards",
         driftA: "driftA 26s ease-in-out infinite",
         driftB: "driftB 32s ease-in-out infinite",
         driftC: "driftC 38s ease-in-out infinite",

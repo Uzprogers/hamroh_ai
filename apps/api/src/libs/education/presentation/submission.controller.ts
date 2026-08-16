@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from "@n
 import { AuthGuard } from "@nestjs/passport";
 import { GradingService } from "../application/services/grading.service";
 import { ResultsService } from "../application/services/results.service";
+import { GroupService } from "../application/services/group.service";
 import { SubmitAnswerDto } from "../application/dto/submit-answer.dto";
 import { AuthService } from "../../identity/application/services/auth.service";
 import { CurrentUser } from "../../../core/decorators/current-user.decorator";
@@ -15,6 +16,7 @@ export class SubmissionController {
   constructor(
     private readonly gradingService: GradingService,
     private readonly resultsService: ResultsService,
+    private readonly groupService: GroupService,
     private readonly authService: AuthService,
   ) {}
 
@@ -33,7 +35,8 @@ export class SubmissionController {
 
   @Get("results/student/:id")
   @Roles(Role.TEACHER)
-  student(@Param("id", ParseUUIDPipe) id: string) {
+  async student(@CurrentUser() user: RequestUser, @Param("id", ParseUUIDPipe) id: string) {
+    await this.groupService.assertStudentAccess(id, user.id);
     return this.resultsService.studentResults(id);
   }
 

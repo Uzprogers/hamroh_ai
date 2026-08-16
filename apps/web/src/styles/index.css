@@ -119,6 +119,17 @@
     pointer-events: none;
   }
 
+  .card-sweep {
+    background-image: linear-gradient(
+      100deg,
+      transparent 38%,
+      rgb(var(--teal) / 0.12) 50%,
+      transparent 62%
+    );
+    background-size: 250% 100%;
+    background-repeat: no-repeat;
+  }
+
   .tilt {
     transform-style: preserve-3d;
     transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
