@@ -1,9 +1,19 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  UseGuards,
+} from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { GroupService } from "../application/services/group.service";
 import { ResultsService } from "../application/services/results.service";
 import { CreateGroupDto } from "../application/dto/create-group.dto";
 import { AddMemberDto } from "../application/dto/add-member.dto";
+import { JoinGroupDto } from "../application/dto/join-group.dto";
 import { CurrentUser } from "../../../core/decorators/current-user.decorator";
 import { Roles, RolesGuard } from "../../../core/decorators/roles.decorator";
 import { Role } from "../../identity/config/identity.enums";
@@ -33,6 +43,34 @@ export class GroupController {
   @Roles(Role.STUDENT)
   mine(@CurrentUser() user: RequestUser) {
     return this.groupService.listForStudent(user.id);
+  }
+
+  @Get("school")
+  @Roles(Role.STUDENT)
+  school(@CurrentUser() user: RequestUser) {
+    return this.groupService.schoolGroups(user.id);
+  }
+
+  @Post("join")
+  @Roles(Role.STUDENT)
+  join(@CurrentUser() user: RequestUser, @Body() dto: JoinGroupDto) {
+    return this.groupService.joinByCode(user.id, dto.code);
+  }
+
+  @Post(":id/join")
+  @Roles(Role.STUDENT)
+  joinSchoolGroup(@CurrentUser() user: RequestUser, @Param("id", ParseUUIDPipe) id: string) {
+    return this.groupService.joinSchoolGroup(user.id, id);
+  }
+
+  @Delete(":id/members/:studentId")
+  @Roles(Role.TEACHER)
+  removeMember(
+    @CurrentUser() user: RequestUser,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Param("studentId", ParseUUIDPipe) studentId: string,
+  ) {
+    return this.groupService.removeMember(id, user.id, studentId);
   }
 
   @Get(":id/members")

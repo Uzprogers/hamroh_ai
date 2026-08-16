@@ -62,13 +62,20 @@ export interface QuizAccess {
   name: string;
 }
 
-export interface QuizSummary {
+export interface QuizSessionSummary {
   id: string;
   pin: string;
   status: QuizStatus;
   lesson_topic: string;
   questions_count: number;
   generation: QuizGeneration;
+}
+
+export interface QuizSummary extends QuizSessionSummary {
+  is_member: boolean;
+  group_name: string;
+  subject: string;
+  teacher_name: string;
 }
 
 export interface AnswerOutcome {

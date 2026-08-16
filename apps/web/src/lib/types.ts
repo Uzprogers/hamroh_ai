@@ -89,8 +89,30 @@ export interface Group {
   teacher_id: string;
   name: string;
   subject: string;
+  code: string;
   institution_type: InstitutionType;
   member_count?: number;
+}
+
+export type MemberSource = "TEACHER" | "PIN" | "CODE" | "SCHOOL";
+
+export interface SchoolGroup {
+  id: string;
+  name: string;
+  subject: string;
+  teacher_name: string;
+  member_count: number;
+  is_member: boolean;
+}
+
+export interface GroupMember {
+  id: string;
+  first_name: string;
+  last_name: string | null;
+  phone: string | null;
+  grade_level: string | null;
+  source: MemberSource;
+  joined_at: string;
 }
 
 export interface PlanStep {

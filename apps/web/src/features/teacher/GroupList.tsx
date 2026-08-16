@@ -21,9 +21,14 @@ export function GroupList({ groups }: { groups: Group[] }) {
               <div className="truncate font-semibold">{group.name}</div>
               <div className="truncate text-xs text-muted">{group.subject}</div>
             </div>
-            <span className="chip shrink-0">
-              {group.member_count ?? 0} {t("teacher.members")}
-            </span>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="chip border-teal/40 font-mono tracking-widest text-teal">
+                {group.code}
+              </span>
+              <span className="chip">
+                {group.member_count ?? 0} {t("teacher.members")}
+              </span>
+            </div>
           </Link>
         </li>
       ))}

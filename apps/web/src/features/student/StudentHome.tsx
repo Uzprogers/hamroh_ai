@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
+import { JoinGroupPanel } from "./JoinGroupPanel";
 import type { Lesson, StudentResult } from "../../lib/types";
 
 export function StudentHome() {
@@ -10,6 +11,7 @@ export function StudentHome() {
   const { t } = useI18n();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [results, setResults] = useState<StudentResult[]>([]);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     Promise.all([
@@ -21,7 +23,7 @@ export function StudentHome() {
         setResults(nextResults);
       })
       .catch(() => undefined);
-  }, [token]);
+  }, [token, reload]);
 
   const graded = results.filter((r) => r.score !== null);
   const average = graded.length
@@ -65,6 +67,8 @@ export function StudentHome() {
           </div>
         )}
       </section>
+
+      <JoinGroupPanel onJoined={() => setReload((value) => value + 1)} />
 
       <section>
         <h2 className="mb-4 font-display text-lg font-extrabold">{t("student.myLessons")}</h2>

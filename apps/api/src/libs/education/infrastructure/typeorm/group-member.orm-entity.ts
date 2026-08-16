@@ -1,4 +1,5 @@
-import { CreateDateColumn, Entity, Index, PrimaryColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from "typeorm";
+import { MemberSource } from "../../config/education.enums";
 
 @Entity("group_members")
 export class GroupMemberOrmEntity {
@@ -8,6 +9,9 @@ export class GroupMemberOrmEntity {
   @Index()
   @PrimaryColumn({ type: "uuid" })
   student_id: string;
+
+  @Column({ type: "text", default: MemberSource.TEACHER })
+  source: MemberSource;
 
   @CreateDateColumn({ type: "timestamptz" })
   joined_at: Date;

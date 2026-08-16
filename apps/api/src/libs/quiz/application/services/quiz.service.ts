@@ -27,6 +27,8 @@ import {
   QUIZ_OPTION_COUNT,
   QUIZ_PIN_ATTEMPTS,
   QUIZ_PIN_LENGTH,
+  QUIZ_PIN_MAX_MISSES,
+  QUIZ_PIN_WINDOW_MS,
   QUIZ_SPEED_WEIGHT,
   QuizErrorCode,
   QuizGeneration,
@@ -40,8 +42,11 @@ import {
   QuizAccess,
   QuizQuestion,
   QuizResults,
+  QuizSessionSummary,
   QuizSummary,
 } from "../types/quiz.types";
+import { MemberSource } from "../../../education/config/education.enums";
+import { Role } from "../../../identity/config/identity.enums";
 
 interface LeaderboardRaw {
   student_id: string;
@@ -62,6 +67,7 @@ interface QuestionStatRaw {
 @Injectable()
 export class QuizService {
   private readonly logger = new Logger(QuizService.name);
+  private readonly pinMisses = new Map<string, { count: number; since: number }>();
 
   constructor(
     @InjectRepository(QuizSessionOrmEntity)
@@ -92,7 +98,7 @@ export class QuizService {
     });
     if (open) {
       if (open.generation === QuizGeneration.FAILED) void this.generate(open.id, locale, lesson);
-      return this.toSummary(open, lesson.topic);
+      return this.describe(open, teacherId);
     }
 
     const session = await this.sessionRepo.save(
@@ -109,7 +115,7 @@ export class QuizService {
 
     void this.generate(session.id, locale, lesson);
 
-    return this.toSummary(session, lesson.topic);
+    return this.describe(session, teacherId);
   }
 
   private async generate(
@@ -158,14 +164,52 @@ export class QuizService {
   }
 
   async summaryByPin(pin: string, userId: string): Promise<QuizSummary> {
-    const session = await this.requireByPin(pin);
-    await this.requireAccess(session, userId);
+    const session = await this.requireByPin(pin, userId);
+    return this.describe(session, userId);
+  }
+
+  async joinByPin(pin: string, userId: string): Promise<QuizSummary> {
+    const session = await this.requireByPin(pin, userId);
+    if (session.status === QuizStatus.ENDED) throw new ForbiddenException(QuizErrorCode.QUIZ_ENDED);
+
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user || user.role !== Role.STUDENT) {
+      throw new ForbiddenException(QuizErrorCode.UNAUTHORIZED);
+    }
+
     const lesson = await this.lessonRepo.findOne({ where: { id: session.lesson_id } });
-    return this.toSummary(session, lesson?.topic ?? "");
+    if (!lesson) throw new NotFoundException(QuizErrorCode.QUIZ_NOT_FOUND);
+
+    await this.memberRepo
+      .createQueryBuilder()
+      .insert()
+      .into(GroupMemberOrmEntity)
+      .values({ group_id: lesson.group_id, student_id: userId, source: MemberSource.PIN })
+      .orIgnore()
+      .execute();
+
+    return this.describe(session, userId);
+  }
+
+  private async describe(session: QuizSessionOrmEntity, userId: string): Promise<QuizSummary> {
+    const lesson = await this.lessonRepo.findOne({ where: { id: session.lesson_id } });
+    const group = lesson
+      ? await this.groupRepo.findOne({ where: { id: lesson.group_id } })
+      : null;
+    const teacher = await this.userRepo.findOne({ where: { id: session.teacher_id } });
+    const isMember = session.teacher_id === userId || (await this.isMember(session, userId));
+
+    return {
+      ...this.toSummary(session, lesson?.topic ?? ""),
+      is_member: isMember,
+      group_name: group?.name ?? "",
+      subject: group?.subject ?? "",
+      teacher_name: teacher ? this.displayName(teacher) : "",
+    };
   }
 
   async access(pin: string, userId: string): Promise<QuizAccess> {
-    const session = await this.requireByPin(pin);
+    const session = await this.requireByPin(pin, userId);
     const user = await this.requireAccess(session, userId);
     return {
       session_id: session.id,
@@ -323,13 +367,51 @@ export class QuizService {
     return { leaderboard, questions };
   }
 
-  private async requireByPin(pin: string): Promise<QuizSessionOrmEntity> {
+  private async requireByPin(pin: string, userId: string): Promise<QuizSessionOrmEntity> {
     const clean = String(pin ?? "").trim();
     if (!/^\d{6}$/.test(clean)) throw new BadRequestException(QuizErrorCode.INVALID_PIN);
+    this.guardPinRate(userId);
 
     const session = await this.sessionRepo.findOne({ where: { pin: clean } });
-    if (!session) throw new NotFoundException(QuizErrorCode.QUIZ_NOT_FOUND);
+    if (!session) {
+      this.countPinMiss(userId);
+      throw new NotFoundException(QuizErrorCode.QUIZ_NOT_FOUND);
+    }
+
+    this.pinMisses.delete(userId);
     return session;
+  }
+
+  private guardPinRate(userId: string): void {
+    const entry = this.pinMisses.get(userId);
+    if (!entry) return;
+    if (Date.now() - entry.since > QUIZ_PIN_WINDOW_MS) {
+      this.pinMisses.delete(userId);
+      return;
+    }
+    if (entry.count >= QUIZ_PIN_MAX_MISSES) {
+      throw new ForbiddenException(QuizErrorCode.TOO_MANY_ATTEMPTS);
+    }
+  }
+
+  private countPinMiss(userId: string): void {
+    const entry = this.pinMisses.get(userId);
+    if (!entry || Date.now() - entry.since > QUIZ_PIN_WINDOW_MS) {
+      this.pinMisses.set(userId, { count: 1, since: Date.now() });
+      return;
+    }
+    entry.count += 1;
+  }
+
+  private async isMember(session: QuizSessionOrmEntity, userId: string): Promise<boolean> {
+    const member = await this.memberRepo
+      .createQueryBuilder("m")
+      .innerJoin(LessonOrmEntity, "l", "l.group_id = m.group_id")
+      .where("l.id = :lessonId", { lessonId: session.lesson_id })
+      .andWhere("m.student_id = :studentId", { studentId: userId })
+      .getCount();
+
+    return member > 0;
   }
 
   private async requireAccess(
@@ -340,18 +422,13 @@ export class QuizService {
     if (!user) throw new ForbiddenException(QuizErrorCode.UNAUTHORIZED);
     if (session.teacher_id === user.id) return user;
 
-    const member = await this.memberRepo
-      .createQueryBuilder("m")
-      .innerJoin(LessonOrmEntity, "l", "l.group_id = m.group_id")
-      .where("l.id = :lessonId", { lessonId: session.lesson_id })
-      .andWhere("m.student_id = :studentId", { studentId: user.id })
-      .getCount();
-
-    if (!member) throw new ForbiddenException(QuizErrorCode.NOT_GROUP_MEMBER);
+    if (!(await this.isMember(session, user.id))) {
+      throw new ForbiddenException(QuizErrorCode.NOT_GROUP_MEMBER);
+    }
     return user;
   }
 
-  private toSummary(session: QuizSessionOrmEntity, topic: string): QuizSummary {
+  private toSummary(session: QuizSessionOrmEntity, topic: string): QuizSessionSummary {
     return {
       id: session.id,
       pin: session.pin,

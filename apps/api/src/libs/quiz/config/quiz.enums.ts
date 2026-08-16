@@ -33,6 +33,7 @@ export enum QuizErrorCode {
   FORBIDDEN = "FORBIDDEN",
   QUIZ_ENDED = "QUIZ_ENDED",
   QUIZ_NOT_READY = "QUIZ_NOT_READY",
+  TOO_MANY_ATTEMPTS = "TOO_MANY_ATTEMPTS",
   JOIN_FAILED = "JOIN_FAILED",
 }
 
@@ -45,3 +46,5 @@ export const QUIZ_SPEED_WEIGHT = 0.5;
 export const QUIZ_PIN_LENGTH = 6;
 export const QUIZ_PIN_ATTEMPTS = 20;
 export const QUIZ_ANSWER_GRACE_MS = 400;
+export const QUIZ_PIN_MAX_MISSES = 6;
+export const QUIZ_PIN_WINDOW_MS = 10 * 60 * 1000;

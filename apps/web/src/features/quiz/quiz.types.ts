@@ -9,6 +9,10 @@ export interface QuizSummary {
   lesson_topic: string;
   questions_count: number;
   generation: QuizGeneration;
+  is_member: boolean;
+  group_name: string;
+  subject: string;
+  teacher_name: string;
 }
 
 export interface QuizPlayer {

@@ -99,7 +99,7 @@ export class GroupAnalyticsService {
     }));
 
     return {
-      group: { id: group.id, name: group.name, subject: group.subject },
+      group: { id: group.id, name: group.name, subject: group.subject, code: group.code },
       average_percent: totals.average_percent,
       submissions: totals.submissions,
       students,

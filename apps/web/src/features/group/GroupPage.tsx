@@ -4,6 +4,7 @@ import { Bars3D } from "./Bars3D";
 import { GrowthChip, GrowthList } from "./GrowthList";
 import { MistakeDetailDialog } from "./MistakeDetailDialog";
 import { MistakeTallyList } from "./MistakeTallyList";
+import { MembersPanel } from "./MembersPanel";
 import { Panel } from "./Section";
 import { StudentDetailDialog } from "./StudentDetailDialog";
 import { TopicFilter } from "./TopicFilter";
@@ -166,6 +167,10 @@ export function GroupPage() {
           <TopicFilter lessons={lessons} activeId={lessonId} onSelect={setLessonId} />
         </div>
       )}
+
+      <div className="mt-4">
+        <MembersPanel groupId={data.group.id} code={data.group.code} />
+      </div>
 
       <div className={busy ? "opacity-60 transition-opacity" : "transition-opacity"}>
         {data.students.length === 0 ? (

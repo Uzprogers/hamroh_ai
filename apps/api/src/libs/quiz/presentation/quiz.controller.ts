@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from "@n
 import { AuthGuard } from "@nestjs/passport";
 import { QuizService } from "../application/services/quiz.service";
 import { CreateQuizSessionDto } from "../application/dto/create-quiz-session.dto";
+import { JoinQuizGroupDto } from "../application/dto/join-quiz-group.dto";
 import { AuthService } from "../../identity/application/services/auth.service";
 import { CurrentUser } from "../../../core/decorators/current-user.decorator";
 import { Roles, RolesGuard } from "../../../core/decorators/roles.decorator";
@@ -30,6 +31,12 @@ export class QuizController {
   @Get("sessions/by-pin/:pin")
   byPin(@CurrentUser() user: RequestUser, @Param("pin") pin: string): Promise<QuizSummary> {
     return this.quizService.summaryByPin(pin, user.id);
+  }
+
+  @Post("sessions/join")
+  @Roles(Role.STUDENT)
+  join(@CurrentUser() user: RequestUser, @Body() dto: JoinQuizGroupDto): Promise<QuizSummary> {
+    return this.quizService.joinByPin(dto.pin, user.id);
   }
 
   @Get("sessions/:id/results")

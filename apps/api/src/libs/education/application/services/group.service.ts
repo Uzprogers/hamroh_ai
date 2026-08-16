@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { GroupOrmEntity } from "../../infrastructure/typeorm/group.orm-entity";
@@ -6,6 +11,23 @@ import { GroupMemberOrmEntity } from "../../infrastructure/typeorm/group-member.
 import { UserOrmEntity } from "../../../identity/infrastructure/typeorm/user.orm-entity";
 import { CreateGroupDto } from "../dto/create-group.dto";
 import { Role } from "../../../identity/config/identity.enums";
+import {
+  GROUP_CODE_ALPHABET,
+  GROUP_CODE_ATTEMPTS,
+  GROUP_CODE_LENGTH,
+  MemberSource,
+} from "../../config/education.enums";
+import { GroupMemberRow, SchoolGroupRow } from "../types/group-join.types";
+
+interface SchoolGroupRaw {
+  id: string;
+  name: string;
+  subject: string;
+  first_name: string;
+  last_name: string | null;
+  member_count: string;
+  is_member: boolean;
+}
 
 @Injectable()
 export class GroupService {
@@ -17,7 +39,9 @@ export class GroupService {
   ) {}
 
   async create(teacherId: string, dto: CreateGroupDto) {
-    return this.groupRepo.save(this.groupRepo.create({ ...dto, teacher_id: teacherId }));
+    return this.groupRepo.save(
+      this.groupRepo.create({ ...dto, teacher_id: teacherId, code: await this.uniqueCode() }),
+    );
   }
 
   async listForTeacher(teacherId: string) {
@@ -47,15 +71,24 @@ export class GroupService {
       .getMany();
   }
 
-  async members(groupId: string, teacherId: string) {
+  async members(groupId: string, teacherId: string): Promise<GroupMemberRow[]> {
     await this.assertOwnership(groupId, teacherId);
 
-    return this.userRepo
+    const rows = await this.userRepo
       .createQueryBuilder("u")
       .innerJoin("group_members", "m", "m.student_id = u.id")
+      .select("u.id", "id")
+      .addSelect("u.first_name", "first_name")
+      .addSelect("u.last_name", "last_name")
+      .addSelect("u.phone", "phone")
+      .addSelect("u.grade_level", "grade_level")
+      .addSelect("m.source", "source")
+      .addSelect("m.joined_at", "joined_at")
       .where("m.group_id = :groupId", { groupId })
-      .orderBy("u.last_name", "ASC")
-      .getMany();
+      .orderBy("m.joined_at", "DESC")
+      .getRawMany<GroupMemberRow>();
+
+    return rows;
   }
 
   async addMember(groupId: string, teacherId: string, phone: string) {
@@ -64,10 +97,72 @@ export class GroupService {
     const student = await this.userRepo.findOne({ where: { phone, role: Role.STUDENT } });
     if (!student) throw new NotFoundException("STUDENT_NOT_FOUND");
 
-    await this.memberRepo.save(
-      this.memberRepo.create({ group_id: groupId, student_id: student.id }),
-    );
+    await this.link(groupId, student.id, MemberSource.TEACHER);
     return student;
+  }
+
+  async removeMember(groupId: string, teacherId: string, studentId: string): Promise<void> {
+    await this.assertOwnership(groupId, teacherId);
+    await this.memberRepo.delete({ group_id: groupId, student_id: studentId });
+  }
+
+  async joinByCode(studentId: string, code: string): Promise<GroupOrmEntity> {
+    const clean = code.trim().toUpperCase();
+    const group = await this.groupRepo.findOne({ where: { code: clean } });
+    if (!group) throw new NotFoundException("GROUP_CODE_NOT_FOUND");
+
+    await this.link(group.id, studentId, MemberSource.CODE);
+    return group;
+  }
+
+  async joinSchoolGroup(studentId: string, groupId: string): Promise<GroupOrmEntity> {
+    const student = await this.requireStudent(studentId);
+    const group = await this.groupRepo.findOne({ where: { id: groupId } });
+    if (!group) throw new NotFoundException("GROUP_NOT_FOUND");
+
+    const teacher = await this.userRepo.findOne({ where: { id: group.teacher_id } });
+    if (!this.sameSchool(teacher?.institution_name ?? null, student.institution_name)) {
+      throw new ForbiddenException("GROUP_NOT_IN_SCHOOL");
+    }
+
+    await this.link(group.id, studentId, MemberSource.SCHOOL);
+    return group;
+  }
+
+  async schoolGroups(studentId: string): Promise<SchoolGroupRow[]> {
+    const student = await this.requireStudent(studentId);
+    const school = this.normalize(student.institution_name);
+    if (!school) return [];
+
+    const rows = await this.groupRepo
+      .createQueryBuilder("g")
+      .innerJoin(UserOrmEntity, "t", "t.id = g.teacher_id")
+      .select("g.id", "id")
+      .addSelect("g.name", "name")
+      .addSelect("g.subject", "subject")
+      .addSelect("t.first_name", "first_name")
+      .addSelect("t.last_name", "last_name")
+      .addSelect(
+        "(SELECT COUNT(*) FROM group_members m WHERE m.group_id = g.id)",
+        "member_count",
+      )
+      .addSelect(
+        `EXISTS (SELECT 1 FROM group_members m WHERE m.group_id = g.id AND m.student_id = :studentId)`,
+        "is_member",
+      )
+      .where("lower(btrim(t.institution_name)) = :school", { school })
+      .setParameter("studentId", studentId)
+      .orderBy("g.created_at", "DESC")
+      .getRawMany<SchoolGroupRaw>();
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      subject: row.subject,
+      teacher_name: [row.first_name, row.last_name].filter(Boolean).join(" ").trim(),
+      member_count: Number(row.member_count),
+      is_member: row.is_member,
+    }));
   }
 
   async assertOwnership(groupId: string, teacherId: string): Promise<GroupOrmEntity> {
@@ -85,5 +180,43 @@ export class GroupService {
       .andWhere("g.teacher_id = :teacherId", { teacherId })
       .getCount();
     if (!linked) throw new ForbiddenException("STUDENT_NOT_IN_GROUP");
+  }
+
+  private async link(groupId: string, studentId: string, source: MemberSource): Promise<void> {
+    await this.memberRepo
+      .createQueryBuilder()
+      .insert()
+      .into(GroupMemberOrmEntity)
+      .values({ group_id: groupId, student_id: studentId, source })
+      .orIgnore()
+      .execute();
+  }
+
+  private async requireStudent(studentId: string): Promise<UserOrmEntity> {
+    const student = await this.userRepo.findOne({ where: { id: studentId } });
+    if (!student) throw new NotFoundException("STUDENT_NOT_FOUND");
+    if (student.role !== Role.STUDENT) throw new ForbiddenException("NOT_STUDENT");
+    return student;
+  }
+
+  private sameSchool(left: string | null, right: string | null): boolean {
+    const first = this.normalize(left);
+    return Boolean(first) && first === this.normalize(right);
+  }
+
+  private normalize(value: string | null): string {
+    return (value ?? "").trim().toLowerCase();
+  }
+
+  private async uniqueCode(): Promise<string> {
+    for (let attempt = 0; attempt < GROUP_CODE_ATTEMPTS; attempt += 1) {
+      const code = Array.from(
+        { length: GROUP_CODE_LENGTH },
+        () => GROUP_CODE_ALPHABET[Math.floor(Math.random() * GROUP_CODE_ALPHABET.length)],
+      ).join("");
+      const taken = await this.groupRepo.exists({ where: { code } });
+      if (!taken) return code;
+    }
+    throw new BadRequestException("GROUP_CODE_UNAVAILABLE");
   }
 }

@@ -2,6 +2,7 @@ export interface GroupAnalyticsGroup {
   id: string;
   name: string;
   subject: string;
+  code: string;
 }
 
 export interface GroupStudentAnalytics {

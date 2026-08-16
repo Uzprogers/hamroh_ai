@@ -16,6 +16,10 @@ export class GroupOrmEntity {
   @Column({ type: "text" })
   subject: string;
 
+  @Index({ unique: true })
+  @Column({ type: "varchar", length: 8 })
+  code: string;
+
   @Column({ type: "text" })
   institution_type: InstitutionType;
 

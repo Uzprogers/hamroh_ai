@@ -58,6 +58,25 @@ export function StudentQuizPage() {
     void lookup(scannedPin);
   }, [scannedPin, token]);
 
+  const enter = async () => {
+    if (!summary) return;
+    if (summary.is_member) {
+      setConfirmed(true);
+      return;
+    }
+
+    setJoining(true);
+    setJoinError(null);
+    try {
+      setSummary(await api.post<QuizSummary>("/quiz/sessions/join", { pin: summary.pin }, token));
+      setConfirmed(true);
+    } catch (error) {
+      setJoinError(error instanceof ApiError ? error.code : "unknown");
+    } finally {
+      setJoining(false);
+    }
+  };
+
   const errorKey = quizErrorKey(joinError ?? room.errorCode);
 
   if (summary && !confirmed) {
@@ -69,6 +88,16 @@ export function StudentQuizPage() {
 
           <dl className="mt-5 space-y-2.5 text-sm">
             <div className="flex items-center justify-between gap-3">
+              <dt className="text-muted">{t("group.title")}</dt>
+              <dd className="font-semibold">
+                {summary.group_name} · {summary.subject}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-muted">{t("quiz.teacher")}</dt>
+              <dd className="font-semibold">{summary.teacher_name}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-3">
               <dt className="text-muted">{t("quiz.pin")}</dt>
               <dd className="font-mono text-lg font-extrabold tracking-[0.2em] text-teal">
                 {summary.pin}
@@ -76,7 +105,9 @@ export function StudentQuizPage() {
             </div>
             <div className="flex items-center justify-between gap-3">
               <dt className="text-muted">{t("quiz.questions")}</dt>
-              <dd className="font-semibold">{summary.questions_count}</dd>
+              <dd className="font-semibold">
+                {summary.generation === "PENDING" ? "…" : summary.questions_count}
+              </dd>
             </div>
             <div className="flex items-center justify-between gap-3">
               <dt className="text-muted">{t("quiz.live")}</dt>
@@ -86,13 +117,19 @@ export function StudentQuizPage() {
             </div>
           </dl>
 
+          {!summary.is_member && (
+            <p className="mt-5 rounded-2xl border border-teal/40 bg-teal/10 px-4 py-3 text-start text-sm text-teal">
+              {t("group.join.notice")}
+            </p>
+          )}
+
           <button
             type="button"
             className="btn-primary mt-6 w-full"
-            disabled={summary.status === "ENDED"}
-            onClick={() => setConfirmed(true)}
+            disabled={summary.status === "ENDED" || joining}
+            onClick={() => void enter()}
           >
-            {t("quiz.join")}
+            {summary.is_member ? t("quiz.join") : t("group.join.action")}
           </button>
 
           {errorKey && <p className="mt-3 text-sm text-coral">{t(errorKey)}</p>}
