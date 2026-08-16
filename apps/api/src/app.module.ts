@@ -4,6 +4,7 @@ import { IdentityModule } from "./libs/identity/identity.module";
 import { AgentModule } from "./libs/agent/agent.module";
 import { SpeechModule } from "./libs/speech/speech.module";
 import { EducationModule } from "./libs/education/education.module";
+import { QuizModule } from "./libs/quiz/quiz.module";
 import { SessionModule } from "./libs/session/session.module";
 
 @Module({
@@ -14,6 +15,7 @@ import { SessionModule } from "./libs/session/session.module";
     SpeechModule,
     EducationModule,
     SessionModule,
+    QuizModule,
   ],
 })
 export class AppModule {}
