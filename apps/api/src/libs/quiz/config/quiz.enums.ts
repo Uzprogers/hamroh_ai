@@ -4,6 +4,12 @@ export enum QuizStatus {
   ENDED = "ENDED",
 }
 
+export enum QuizGeneration {
+  PENDING = "PENDING",
+  READY = "READY",
+  FAILED = "FAILED",
+}
+
 export enum QuizEvent {
   JOIN = "quiz:join",
   NEXT = "quiz:next",
@@ -26,6 +32,7 @@ export enum QuizErrorCode {
   INVALID_PIN = "INVALID_PIN",
   FORBIDDEN = "FORBIDDEN",
   QUIZ_ENDED = "QUIZ_ENDED",
+  QUIZ_NOT_READY = "QUIZ_NOT_READY",
   JOIN_FAILED = "JOIN_FAILED",
 }
 

@@ -1,11 +1,14 @@
 export type QuizStatus = "LOBBY" | "RUNNING" | "ENDED";
 
+export type QuizGeneration = "PENDING" | "READY" | "FAILED";
+
 export interface QuizSummary {
   id: string;
   pin: string;
   status: QuizStatus;
   lesson_topic: string;
   questions_count: number;
+  generation: QuizGeneration;
 }
 
 export interface QuizPlayer {

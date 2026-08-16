@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -28,6 +29,7 @@ import {
   QUIZ_PIN_LENGTH,
   QUIZ_SPEED_WEIGHT,
   QuizErrorCode,
+  QuizGeneration,
   QuizStatus,
 } from "../../config/quiz.enums";
 import {
@@ -59,6 +61,8 @@ interface QuestionStatRaw {
 
 @Injectable()
 export class QuizService {
+  private readonly logger = new Logger(QuizService.name);
+
   constructor(
     @InjectRepository(QuizSessionOrmEntity)
     private readonly sessionRepo: Repository<QuizSessionOrmEntity>,
@@ -86,30 +90,10 @@ export class QuizService {
       where: { lesson_id: lesson.id, teacher_id: teacherId, status: Not(QuizStatus.ENDED) },
       order: { created_at: "DESC" },
     });
-    if (open) return this.toSummary(open, lesson.topic);
-
-    const group = await this.groupRepo.findOne({ where: { id: lesson.group_id } });
-    const assignments = await this.assignmentRepo.find({
-      where: { lesson_id: lesson.id },
-      order: { order_index: "ASC" },
-    });
-
-    const generated = await this.ai.json<GeneratedQuiz>(
-      `${QUIZ_SYSTEM_PROMPT}\n\n${LANGUAGE_INSTRUCTION[locale]}`,
-      buildQuizPrompt({
-        subject: group?.subject ?? lesson.topic,
-        topic: lesson.topic,
-        objective: lesson.objective,
-        materials: assignments.flatMap((assignment) =>
-          [assignment.question, assignment.expected_answer].filter(
-            (text): text is string => Boolean(text) && String(text).trim().length > 0,
-          ),
-        ),
-      }),
-    );
-
-    const questions = this.normalize(generated?.questions ?? []);
-    if (!questions.length) throw new BadRequestException("QUIZ_NO_QUESTIONS");
+    if (open) {
+      if (open.generation === QuizGeneration.FAILED) void this.generate(open.id, locale, lesson);
+      return this.toSummary(open, lesson.topic);
+    }
 
     const session = await this.sessionRepo.save(
       this.sessionRepo.create({
@@ -117,12 +101,60 @@ export class QuizService {
         teacher_id: teacherId,
         pin: await this.uniquePin(),
         status: QuizStatus.LOBBY,
-        questions,
+        questions: [],
+        generation: QuizGeneration.PENDING,
         current_index: 0,
       }),
     );
 
+    void this.generate(session.id, locale, lesson);
+
     return this.toSummary(session, lesson.topic);
+  }
+
+  private async generate(
+    sessionId: string,
+    locale: Locale,
+    lesson: LessonOrmEntity,
+  ): Promise<void> {
+    await this.sessionRepo.update(
+      { id: sessionId },
+      { generation: QuizGeneration.PENDING, questions: [] },
+    );
+
+    try {
+      const group = await this.groupRepo.findOne({ where: { id: lesson.group_id } });
+      const assignments = await this.assignmentRepo.find({
+        where: { lesson_id: lesson.id },
+        order: { order_index: "ASC" },
+      });
+
+      const generated = await this.ai.json<GeneratedQuiz>(
+        `${QUIZ_SYSTEM_PROMPT}\n\n${LANGUAGE_INSTRUCTION[locale]}`,
+        buildQuizPrompt({
+          subject: group?.subject ?? lesson.topic,
+          topic: lesson.topic,
+          objective: lesson.objective,
+          materials: assignments.flatMap((assignment) =>
+            [assignment.question, assignment.expected_answer].filter(
+              (text): text is string => Boolean(text) && String(text).trim().length > 0,
+            ),
+          ),
+        }),
+        { fast: true },
+      );
+
+      const questions = this.normalize(generated?.questions ?? []);
+      if (!questions.length) throw new BadRequestException("QUIZ_NO_QUESTIONS");
+
+      await this.sessionRepo.update(
+        { id: sessionId },
+        { questions, generation: QuizGeneration.READY },
+      );
+    } catch (error) {
+      this.logger.error(`quiz generation failed: ${(error as Error)?.message ?? error}`);
+      await this.sessionRepo.update({ id: sessionId }, { generation: QuizGeneration.FAILED });
+    }
   }
 
   async summaryByPin(pin: string, userId: string): Promise<QuizSummary> {
@@ -326,6 +358,7 @@ export class QuizService {
       status: session.status,
       lesson_topic: topic,
       questions_count: session.questions.length,
+      generation: session.generation ?? QuizGeneration.READY,
     };
   }
 

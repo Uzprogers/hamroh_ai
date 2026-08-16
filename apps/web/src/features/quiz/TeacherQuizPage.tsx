@@ -10,7 +10,7 @@ import { QuizLeaderboard } from "./QuizLeaderboard";
 import { QuizTimer } from "./QuizTimer";
 import { useQuizRoom } from "./useQuizRoom";
 import { quizErrorKey } from "./quiz.errors";
-import { QUIZ_TILE_BAR, QUIZ_TILE_GLYPH, QUIZ_TILE_STYLE } from "./quiz.const";
+import { QUIZ_POLL_MS, QUIZ_TILE_BAR, QUIZ_TILE_GLYPH, QUIZ_TILE_STYLE } from "./quiz.const";
 import type { QuizSummary } from "./quiz.types";
 
 export function TeacherQuizPage() {
@@ -21,16 +21,31 @@ export function TeacherQuizPage() {
   const [summary, setSummary] = useState<QuizSummary | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [creating, setCreating] = useState(true);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!lessonId || !token) return;
     setCreating(true);
+    setFailure(null);
     api
       .post<QuizSummary>("/quiz/sessions", { lesson_id: lessonId }, token)
       .then(setSummary)
       .catch((error) => setFailure(error instanceof ApiError ? error.code : "unknown"))
       .finally(() => setCreating(false));
-  }, [lessonId, token]);
+  }, [lessonId, token, attempt]);
+
+  useEffect(() => {
+    if (!token || !summary || summary.generation !== "PENDING") return;
+
+    const timer = setInterval(() => {
+      api
+        .get<QuizSummary>(`/quiz/sessions/by-pin/${summary.pin}`, token)
+        .then((next) => next.generation !== "PENDING" && setSummary(next))
+        .catch(() => undefined);
+    }, QUIZ_POLL_MS);
+
+    return () => clearInterval(timer);
+  }, [token, summary]);
 
   const room = useQuizRoom(summary?.pin ?? null);
   const { state, results, reveal, counts, answered } = room;
@@ -79,6 +94,9 @@ export function TeacherQuizPage() {
 
   const status = state?.status ?? summary.status;
   const players = state?.players ?? [];
+  const total = Math.max(summary.questions_count, state?.total ?? 0);
+  const preparing = summary.generation === "PENDING" && total === 0;
+  const brokeDown = summary.generation === "FAILED" && total === 0;
 
   return (
     <div className="space-y-6 text-start">
@@ -106,8 +124,8 @@ export function TeacherQuizPage() {
             </div>
             <p className="mt-2 text-xs text-muted">
               {t("quiz.players")}: {players.length} · {t("quiz.question")}:{" "}
-              {Math.min(state?.index !== undefined && status !== "LOBBY" ? state.index + 1 : 0, summary.questions_count)}
-              /{summary.questions_count}
+              {Math.min(state?.index !== undefined && status !== "LOBBY" ? state.index + 1 : 0, total)}
+              /{preparing ? "…" : total}
             </p>
             </div>
           </div>
@@ -115,9 +133,34 @@ export function TeacherQuizPage() {
 
         {errorKey && <p className="mt-4 text-sm text-coral">{t(errorKey)}</p>}
 
+        {preparing && (
+          <div className="mt-5 flex items-center gap-3 rounded-2xl border border-teal/40 bg-teal/10 px-4 py-3">
+            <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-teal/30 border-t-teal" />
+            <p className="text-start text-sm text-teal">{t("quiz.preparing")}</p>
+          </div>
+        )}
+
+        {brokeDown && (
+          <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-coral/40 bg-coral/10 px-4 py-3">
+            <p className="min-w-0 flex-1 text-start text-sm text-coral">{t("quiz.noQuestions")}</p>
+            <button
+              type="button"
+              className="btn-ghost px-4 py-2"
+              onClick={() => setAttempt((value) => value + 1)}
+            >
+              {t("quiz.retry")}
+            </button>
+          </div>
+        )}
+
         {status !== "ENDED" && (
           <div className="mt-6 flex flex-wrap gap-3">
-            <button type="button" className="btn-primary" onClick={room.next}>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={preparing || brokeDown}
+              onClick={room.next}
+            >
               {status === "LOBBY" ? t("quiz.start") : t("quiz.next")}
             </button>
             <button
@@ -135,7 +178,14 @@ export function TeacherQuizPage() {
         <div className="space-y-6">
           {status === "LOBBY" && (
             <section className="surface p-7">
-              <h2 className="font-display text-lg font-extrabold">{t("quiz.waiting")}</h2>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-display text-lg font-extrabold">{t("quiz.waiting")}</h2>
+                {!preparing && !brokeDown && (
+                  <span className="chip border-teal/40 text-teal">
+                    {t("quiz.ready")} · {total} {t("quiz.questions")}
+                  </span>
+                )}
+              </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 {players.length === 0 ? (
                   <p className="text-sm text-muted">{t("quiz.players")}: 0</p>

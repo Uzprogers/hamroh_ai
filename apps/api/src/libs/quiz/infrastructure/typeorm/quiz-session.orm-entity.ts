@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
-import { QuizStatus } from "../../config/quiz.enums";
+import { QuizGeneration, QuizStatus } from "../../config/quiz.enums";
 import { QuizQuestion } from "../../application/types/quiz.types";
 
 @Entity("quiz_sessions")
@@ -24,6 +24,9 @@ export class QuizSessionOrmEntity {
 
   @Column({ type: "jsonb", default: () => "'[]'::jsonb" })
   questions: QuizQuestion[];
+
+  @Column({ type: "text", default: QuizGeneration.READY })
+  generation: QuizGeneration;
 
   @Column({ type: "int", default: 0 })
   current_index: number;

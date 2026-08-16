@@ -1,4 +1,4 @@
-import { QuizStatus } from "../../config/quiz.enums";
+import { QuizGeneration, QuizStatus } from "../../config/quiz.enums";
 
 export interface QuizQuestion {
   text: string;
@@ -68,6 +68,7 @@ export interface QuizSummary {
   status: QuizStatus;
   lesson_topic: string;
   questions_count: number;
+  generation: QuizGeneration;
 }
 
 export interface AnswerOutcome {

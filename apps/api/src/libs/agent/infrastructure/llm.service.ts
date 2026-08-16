@@ -15,6 +15,10 @@ export interface ToolDefinition {
   parameters: Record<string, unknown>;
 }
 
+export interface JsonOptions {
+  fast?: boolean;
+}
+
 export type StreamChunk =
   | { kind: "text"; text: string }
   | { kind: "tool"; id: string; name: string; args: Record<string, unknown> };
@@ -28,7 +32,7 @@ export class LlmService {
     return env.llm.model;
   }
 
-  async json<T>(systemPrompt: string, userPrompt: string): Promise<T> {
+  async json<T>(systemPrompt: string, userPrompt: string, options: JsonOptions = {}): Promise<T> {
     const response = await this.client.chat.completions.create({
       model: env.llm.model,
       temperature: 0.4,
@@ -37,7 +41,8 @@ export class LlmService {
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-    });
+      ...(options.fast ? { reasoning_effort: "none" } : {}),
+    } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
 
     const raw = response.choices[0]?.message?.content ?? "{}";
     try {

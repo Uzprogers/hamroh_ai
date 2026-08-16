@@ -80,6 +80,8 @@ export class QuizGateway implements OnGatewayDisconnect {
         index: session.current_index,
       });
 
+      if (!runtime.questions.length) runtime.questions = session.questions;
+
       client.data = { userId, sessionId: session.id, isHost: access.is_host } satisfies SocketData;
       await client.join(this.room(session.id));
 
@@ -119,6 +121,12 @@ export class QuizGateway implements OnGatewayDisconnect {
     try {
       const session = await this.quizService.requireHost(data.sessionId, data.userId as string);
       if (session.status === QuizStatus.ENDED) return this.fail(client, QuizErrorCode.QUIZ_ENDED);
+
+      if (!runtime.questions.length) {
+        runtime.questions = session.questions;
+        if (!runtime.questions.length) return this.fail(client, QuizErrorCode.QUIZ_NOT_READY);
+        this.broadcastState(session.id);
+      }
 
       const target = session.status === QuizStatus.LOBBY ? 0 : session.current_index + 1;
       if (target >= runtime.questions.length) {

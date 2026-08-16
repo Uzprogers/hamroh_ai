@@ -15,3 +15,5 @@ export const QUIZ_TILE_BAR = [
 export const QUIZ_TILE_GLYPH = ["A", "B", "C", "D"];
 
 export const QUIZ_PIN_LENGTH = 6;
+
+export const QUIZ_POLL_MS = 2000;

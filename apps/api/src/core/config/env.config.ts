@@ -1,7 +1,23 @@
 import * as dotenv from "dotenv";
+import * as fs from "node:fs";
 import * as path from "node:path";
 
-dotenv.config({ path: path.resolve(__dirname, "../../../../../.env") });
+function loadEnvFile(): void {
+  let dir = __dirname;
+
+  for (let depth = 0; depth < 10; depth += 1) {
+    const file = path.join(dir, ".env");
+    if (fs.existsSync(file)) {
+      dotenv.config({ path: file });
+      return;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) return;
+    dir = parent;
+  }
+}
+
+loadEnvFile();
 
 function required(name: string): string {
   const value = process.env[name];
