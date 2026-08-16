@@ -46,6 +46,7 @@ import {
   QuizSummary,
 } from "../types/quiz.types";
 import { MemberSource } from "../../../education/config/education.enums";
+import { GroupService } from "../../../education/application/services/group.service";
 import { Role } from "../../../identity/config/identity.enums";
 
 interface LeaderboardRaw {
@@ -85,6 +86,7 @@ export class QuizService {
     @InjectRepository(UserOrmEntity)
     private readonly userRepo: Repository<UserOrmEntity>,
     private readonly ai: LlmService,
+    private readonly groupService: GroupService,
   ) {}
 
   async createSession(teacherId: string, locale: Locale, lessonId: string): Promise<QuizSummary> {
@@ -180,13 +182,7 @@ export class QuizService {
     const lesson = await this.lessonRepo.findOne({ where: { id: session.lesson_id } });
     if (!lesson) throw new NotFoundException(QuizErrorCode.QUIZ_NOT_FOUND);
 
-    await this.memberRepo
-      .createQueryBuilder()
-      .insert()
-      .into(GroupMemberOrmEntity)
-      .values({ group_id: lesson.group_id, student_id: userId, source: MemberSource.PIN })
-      .orIgnore()
-      .execute();
+    await this.groupService.joinGroup(userId, lesson.group_id, MemberSource.PIN);
 
     return this.describe(session, userId);
   }
@@ -205,6 +201,7 @@ export class QuizService {
       group_name: group?.name ?? "",
       subject: group?.subject ?? "",
       teacher_name: teacher ? this.displayName(teacher) : "",
+      school: teacher?.institution_name ?? "",
     };
   }
 

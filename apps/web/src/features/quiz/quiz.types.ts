@@ -13,6 +13,7 @@ export interface QuizSummary {
   group_name: string;
   subject: string;
   teacher_name: string;
+  school: string;
 }
 
 export interface QuizPlayer {

@@ -13,6 +13,7 @@ interface AuthValue {
   loginWithGoogle: (googleToken: string) => Promise<User>;
   accept: (result: AuthResult) => User;
   completeProfile: (payload: Record<string, unknown>) => Promise<User>;
+  refresh: () => Promise<void>;
   logout: () => void;
 }
 
@@ -61,6 +62,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [accept, locale, token],
   );
 
+  const refresh = useCallback(async () => {
+    if (!token) return;
+    try {
+      setUser(await api.get<User>("/auth/me", token));
+    } catch {
+      return;
+    }
+  }, [token]);
+
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
@@ -75,9 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loginWithGoogle,
       accept,
       completeProfile,
+      refresh,
       logout,
     }),
-    [user, token, ready, loginWithGoogle, accept, completeProfile, logout],
+    [user, token, ready, loginWithGoogle, accept, completeProfile, refresh, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

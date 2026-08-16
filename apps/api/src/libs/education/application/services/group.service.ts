@@ -106,13 +106,26 @@ export class GroupService {
     await this.memberRepo.delete({ group_id: groupId, student_id: studentId });
   }
 
+  async joinGroup(
+    studentId: string,
+    groupId: string,
+    source: MemberSource,
+  ): Promise<GroupOrmEntity> {
+    const group = await this.groupRepo.findOne({ where: { id: groupId } });
+    if (!group) throw new NotFoundException("GROUP_NOT_FOUND");
+
+    await this.requireStudent(studentId);
+    await this.link(group.id, studentId, source);
+    await this.transferSchool(studentId, group);
+    return group;
+  }
+
   async joinByCode(studentId: string, code: string): Promise<GroupOrmEntity> {
     const clean = code.trim().toUpperCase();
     const group = await this.groupRepo.findOne({ where: { code: clean } });
     if (!group) throw new NotFoundException("GROUP_CODE_NOT_FOUND");
 
-    await this.link(group.id, studentId, MemberSource.CODE);
-    return group;
+    return this.joinGroup(studentId, group.id, MemberSource.CODE);
   }
 
   async joinSchoolGroup(studentId: string, groupId: string): Promise<GroupOrmEntity> {
@@ -125,8 +138,12 @@ export class GroupService {
       throw new ForbiddenException("GROUP_NOT_IN_SCHOOL");
     }
 
-    await this.link(group.id, studentId, MemberSource.SCHOOL);
-    return group;
+    return this.joinGroup(studentId, group.id, MemberSource.SCHOOL);
+  }
+
+  async schoolOf(teacherId: string): Promise<string> {
+    const teacher = await this.userRepo.findOne({ where: { id: teacherId } });
+    return teacher?.institution_name ?? "";
   }
 
   async schoolGroups(studentId: string): Promise<SchoolGroupRow[]> {
@@ -190,6 +207,23 @@ export class GroupService {
       .values({ group_id: groupId, student_id: studentId, source })
       .orIgnore()
       .execute();
+  }
+
+  private async transferSchool(studentId: string, group: GroupOrmEntity): Promise<void> {
+    const teacher = await this.userRepo.findOne({ where: { id: group.teacher_id } });
+    const school = teacher?.institution_name?.trim();
+    if (!school) return;
+
+    const student = await this.userRepo.findOne({ where: { id: studentId } });
+    if (!student || this.sameSchool(student.institution_name, school)) return;
+
+    await this.userRepo.update(
+      { id: studentId },
+      {
+        institution_name: school,
+        institution_type: teacher?.institution_type ?? group.institution_type,
+      },
+    );
   }
 
   private async requireStudent(studentId: string): Promise<UserOrmEntity> {

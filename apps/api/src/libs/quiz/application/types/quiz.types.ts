@@ -76,6 +76,7 @@ export interface QuizSummary extends QuizSessionSummary {
   group_name: string;
   subject: string;
   teacher_name: string;
+  school: string;
 }
 
 export interface AnswerOutcome {

@@ -12,7 +12,7 @@ import { QUIZ_PIN_LENGTH, QUIZ_TILE_GLYPH, QUIZ_TILE_STYLE } from "./quiz.const"
 import type { QuizSummary } from "./quiz.types";
 
 export function StudentQuizPage() {
-  const { token, user } = useAuth();
+  const { token, user, refresh } = useAuth();
   const { t } = useI18n();
 
   const [params] = useSearchParams();
@@ -69,6 +69,7 @@ export function StudentQuizPage() {
     setJoinError(null);
     try {
       setSummary(await api.post<QuizSummary>("/quiz/sessions/join", { pin: summary.pin }, token));
+      await refresh();
       setConfirmed(true);
     } catch (error) {
       setJoinError(error instanceof ApiError ? error.code : "unknown");
@@ -118,9 +119,14 @@ export function StudentQuizPage() {
           </dl>
 
           {!summary.is_member && (
-            <p className="mt-5 rounded-2xl border border-teal/40 bg-teal/10 px-4 py-3 text-start text-sm text-teal">
-              {t("group.join.notice")}
-            </p>
+            <div className="mt-5 space-y-2 rounded-2xl border border-teal/40 bg-teal/10 px-4 py-3 text-start text-sm text-teal">
+              <p>{t("group.join.notice")}</p>
+              {summary.school && summary.school !== user?.institution_name && (
+                <p className="text-amber">
+                  {t("group.join.transfer")}: {summary.school}
+                </p>
+              )}
+            </div>
           )}
 
           <button

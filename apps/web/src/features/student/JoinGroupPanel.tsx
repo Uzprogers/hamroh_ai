@@ -8,7 +8,7 @@ import type { SchoolGroup } from "../../lib/types";
 const CODE_LENGTH = 6;
 
 export function JoinGroupPanel({ onJoined }: { onJoined: () => void }) {
-  const { token, user } = useAuth();
+  const { token, user, refresh } = useAuth();
   const { t } = useI18n();
 
   const [code, setCode] = useState("");
@@ -25,8 +25,9 @@ export function JoinGroupPanel({ onJoined }: { onJoined: () => void }) {
 
   useEffect(load, [token]);
 
-  const finish = () => {
+  const finish = async () => {
     setCode("");
+    await refresh();
     load();
     onJoined();
   };
@@ -37,7 +38,7 @@ export function JoinGroupPanel({ onJoined }: { onJoined: () => void }) {
     setFailure(null);
     try {
       await api.post("/groups/join", { code }, token);
-      finish();
+      await finish();
     } catch (error) {
       setFailure(error instanceof ApiError ? error.code : "unknown");
     } finally {
@@ -50,7 +51,7 @@ export function JoinGroupPanel({ onJoined }: { onJoined: () => void }) {
     setFailure(null);
     try {
       await api.post(`/groups/${groupId}/join`, {}, token);
-      finish();
+      await finish();
     } catch (error) {
       setFailure(error instanceof ApiError ? error.code : "unknown");
     } finally {
@@ -87,6 +88,8 @@ export function JoinGroupPanel({ onJoined }: { onJoined: () => void }) {
           {t("group.join.action")}
         </button>
       </form>
+
+      <p className="mt-2 text-start text-xs text-muted">{t("group.join.transferHint")}</p>
 
       <div className="mt-6">
         <span className="label">{t("group.join.school")}</span>
