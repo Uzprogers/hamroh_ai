@@ -4,6 +4,7 @@ import { ApiError, api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
 import { QuizBars, type BarDatum } from "./QuizBars";
+import { QuizJoinCode } from "./QuizJoinCode";
 import { QuizLeaderboard } from "./QuizLeaderboard";
 import { QuizTimer } from "./QuizTimer";
 import { useQuizRoom } from "./useQuizRoom";
@@ -95,7 +96,9 @@ export function TeacherQuizPage() {
             <p className="mt-1 truncate text-muted">{summary.lesson_topic}</p>
           </div>
 
-          <div className="text-start">
+          <div className="flex flex-wrap items-center gap-6">
+            {status === "LOBBY" && <QuizJoinCode pin={summary.pin} />}
+            <div className="text-start">
             <span className="label">{t("quiz.pin")}</span>
             <div className="font-mono text-5xl font-extrabold tracking-[0.3em] text-teal">
               {summary.pin}
@@ -105,6 +108,7 @@ export function TeacherQuizPage() {
               {Math.min(state?.index !== undefined && status !== "LOBBY" ? state.index + 1 : 0, summary.questions_count)}
               /{summary.questions_count}
             </p>
+            </div>
           </div>
         </div>
 

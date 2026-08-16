@@ -4,8 +4,16 @@ import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
 import { LessonPdfButton } from "./LessonPdfButton";
+import { PlanStepDialog } from "./PlanStepDialog";
+import { NavIcon } from "../../components/NavIcon";
 import type { TranslationKey } from "../../i18n/dictionary";
-import type { Assignment, GroupSummaryRow, Lesson, StudentResult } from "../../lib/types";
+import type {
+  Assignment,
+  GroupSummaryRow,
+  Lesson,
+  LessonStatus,
+  StudentResult,
+} from "../../lib/types";
 
 export function LessonPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +25,7 @@ export function LessonPage() {
   const [summary, setSummary] = useState<GroupSummaryRow[]>([]);
   const [openStudent, setOpenStudent] = useState<string | null>(null);
   const [studentResults, setStudentResults] = useState<StudentResult[]>([]);
+  const [openStep, setOpenStep] = useState<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -40,10 +49,10 @@ export function LessonPage() {
     setStudentResults(await api.get<StudentResult[]>(`/results/student/${studentId}`, token));
   };
 
-  const activate = async () => {
+  const changeStatus = async (status: LessonStatus) => {
     if (!lesson) return;
-    await api.patch(`/lessons/${lesson.id}/status`, { status: "ACTIVE" }, token);
-    setLesson({ ...lesson, status: "ACTIVE" });
+    await api.patch(`/lessons/${lesson.id}/status`, { status }, token);
+    setLesson({ ...lesson, status });
   };
 
   if (!lesson) return <div className="skeleton h-64" />;
@@ -63,12 +72,23 @@ export function LessonPage() {
             <p className="mt-2 max-w-2xl text-muted">{lesson.objective}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <span
+              className={`chip ${lesson.status === "ACTIVE" ? "border-teal/40 text-teal" : ""}`}
+            >
+              {t(`lesson.status.${lesson.status}` as TranslationKey)}
+            </span>
             <LessonPdfButton lessonId={lesson.id} />
+            <Link to={`/quiz/host/${lesson.id}`} className="btn-ghost">
+              <NavIcon name="spark" className="h-4 w-4" />
+              {t("quiz.title")}
+            </Link>
             {lesson.status === "ACTIVE" ? (
-              <span className="chip border-teal/40 text-teal">{t("teacher.published")}</span>
+              <button type="button" className="btn-ghost" onClick={() => changeStatus("CLOSED")}>
+                {t("lesson.close")}
+              </button>
             ) : (
-              <button type="button" className="btn-primary" onClick={activate}>
-                {t("teacher.publish")}
+              <button type="button" className="btn-primary" onClick={() => changeStatus("ACTIVE")}>
+                {lesson.status === "CLOSED" ? t("lesson.reopen") : t("teacher.publish")}
               </button>
             )}
           </div>
@@ -80,13 +100,23 @@ export function LessonPage() {
           <h2 className="font-display text-lg font-extrabold">{t("teacher.plan")}</h2>
           <ol className="mt-4 space-y-3">
             {lesson.plan.map((step, index) => (
-              <li key={step.title} className="flex gap-4 rounded-xl border border-edge/60 p-4">
-                <span className="font-mono text-sm text-teal">{String(index + 1).padStart(2, "0")}</span>
-                <div>
-                  <div className="font-semibold">{step.title}</div>
-                  <p className="mt-1 text-sm text-muted">{step.description}</p>
-                </div>
-                <span className="ml-auto shrink-0 text-xs text-muted">{step.minutes} {t("card.minutes")}</span>
+              <li key={step.title}>
+                <button
+                  type="button"
+                  onClick={() => setOpenStep(index)}
+                  className="flex w-full gap-4 rounded-xl border border-edge/60 p-4 text-start transition hover:-translate-y-0.5 hover:border-teal/50"
+                >
+                  <span className="font-mono text-sm text-teal">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="font-semibold">{step.title}</div>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted">{step.description}</p>
+                  </div>
+                  <span className="ml-auto shrink-0 text-xs text-muted">
+                    {step.minutes} {t("card.minutes")}
+                  </span>
+                </button>
               </li>
             ))}
           </ol>
@@ -198,6 +228,10 @@ export function LessonPage() {
           </div>
         )}
       </section>
+
+      {openStep !== null && (
+        <PlanStepDialog plan={lesson.plan} index={openStep} onClose={() => setOpenStep(null)} />
+      )}
     </div>
   );
 }

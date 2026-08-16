@@ -1,4 +1,5 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ApiError, api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
@@ -13,12 +14,17 @@ export function StudentQuizPage() {
   const { token, user } = useAuth();
   const { t } = useI18n();
 
-  const [pinInput, setPinInput] = useState("");
+  const [params] = useSearchParams();
+  const scannedPin = (params.get("pin") ?? "").replace(/\D/g, "").slice(0, QUIZ_PIN_LENGTH);
+
+  const [pinInput, setPinInput] = useState(scannedPin);
   const [summary, setSummary] = useState<QuizSummary | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
+  const scanned = useRef(false);
 
-  const room = useQuizRoom(summary?.pin ?? null);
+  const room = useQuizRoom(confirmed && summary ? summary.pin : null);
   const { state, reveal, outcome, chosen, results } = room;
 
   const myRank = useMemo(() => {
@@ -27,11 +33,8 @@ export function StudentQuizPage() {
     return index < 0 ? null : { rank: index + 1, row: rows[index] };
   }, [results, user?.id]);
 
-  const submitPin = async (event: FormEvent) => {
-    event.preventDefault();
-    const pin = pinInput.replace(/\D/g, "").slice(0, QUIZ_PIN_LENGTH);
+  const lookup = async (pin: string) => {
     if (pin.length !== QUIZ_PIN_LENGTH) return;
-
     setJoining(true);
     setJoinError(null);
     try {
@@ -43,7 +46,59 @@ export function StudentQuizPage() {
     }
   };
 
+  const submitPin = (event: FormEvent) => {
+    event.preventDefault();
+    void lookup(pinInput.replace(/\D/g, "").slice(0, QUIZ_PIN_LENGTH));
+  };
+
+  useEffect(() => {
+    if (scanned.current || scannedPin.length !== QUIZ_PIN_LENGTH || !token) return;
+    scanned.current = true;
+    void lookup(scannedPin);
+  }, [scannedPin, token]);
+
   const errorKey = quizErrorKey(joinError ?? room.errorCode);
+
+  if (summary && !confirmed) {
+    return (
+      <div className="mx-auto max-w-md text-start">
+        <section className="surface animate-rise p-7">
+          <span className="chip border-teal/40 text-teal">{t("quiz.session")}</span>
+          <h1 className="mt-3 font-display text-2xl font-extrabold">{summary.lesson_topic}</h1>
+
+          <dl className="mt-5 space-y-2.5 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-muted">{t("quiz.pin")}</dt>
+              <dd className="font-mono text-lg font-extrabold tracking-[0.2em] text-teal">
+                {summary.pin}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-muted">{t("quiz.questions")}</dt>
+              <dd className="font-semibold">{summary.questions_count}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-muted">{t("quiz.live")}</dt>
+              <dd className="font-semibold">
+                {summary.status === "ENDED" ? t("quiz.ended") : t("quiz.waiting")}
+              </dd>
+            </div>
+          </dl>
+
+          <button
+            type="button"
+            className="btn-primary mt-6 w-full"
+            disabled={summary.status === "ENDED"}
+            onClick={() => setConfirmed(true)}
+          >
+            {t("quiz.join")}
+          </button>
+
+          {errorKey && <p className="mt-3 text-sm text-coral">{t(errorKey)}</p>}
+        </section>
+      </div>
+    );
+  }
 
   if (!summary) {
     return (
