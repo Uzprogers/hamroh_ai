@@ -76,6 +76,8 @@ export function OnboardingDialog({ user }: { user: User }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const phoneRequired = !user.email;
+
   const set = (key: keyof typeof form, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -94,7 +96,8 @@ export function OnboardingDialog({ user }: { user: User }) {
     if (!role) return;
 
     const phone = user.phone ?? form.phone.trim();
-    if (!/^\+998\d{9}$/.test(phone)) {
+    const valid = /^\+998\d{9}$/.test(phone);
+    if (phoneRequired ? !valid : Boolean(phone) && !valid) {
       setError(t("onboarding.phone.invalid"));
       return;
     }
@@ -287,7 +290,7 @@ export function OnboardingDialog({ user }: { user: User }) {
 
               <div>
                 <label className="label" htmlFor="ob_phone">
-                  {t("onboarding.phone")}
+                  {t(phoneRequired ? "onboarding.phone" : "onboarding.phone.optional")}
                 </label>
                 {user.phone ? (
                   <input
