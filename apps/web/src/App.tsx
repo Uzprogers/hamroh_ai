@@ -9,6 +9,7 @@ import { LessonPage } from "./features/teacher/LessonPage";
 import { StudentHome } from "./features/student/StudentHome";
 import { StudentLessonPage } from "./features/student/StudentLessonPage";
 import { ProfilePage } from "./features/profile/ProfilePage";
+import { GroupPage } from "./features/group/GroupPage";
 import { SessionPage } from "./features/session/SessionPage";
 
 export function App() {
@@ -67,6 +68,7 @@ export function App() {
       <Routes>
         <Route path="/lesson/:id" element={<LessonPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/group/:id" element={<GroupPage />} />
         <Route path="*" element={<TeacherWorkspace />} />
       </Routes>
     </AppShell>

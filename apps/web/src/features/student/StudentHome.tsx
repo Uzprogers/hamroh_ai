@@ -39,13 +39,18 @@ export function StudentHome() {
             <p className="mt-2 max-w-lg text-muted">{t("tagline")}</p>
           </div>
 
-          <Link to="/session" className="btn-primary">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-pulseRing rounded-full bg-ink/60" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-ink" />
-            </span>
-            {t("student.startSession")}
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link to="/quiz" className="btn-ghost">
+              {t("quiz.title")}
+            </Link>
+            <Link to="/session" className="btn-primary">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-pulseRing rounded-full bg-ink/60" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-ink" />
+              </span>
+              {t("student.startSession")}
+            </Link>
+          </div>
         </div>
 
         {graded.length > 0 && (
