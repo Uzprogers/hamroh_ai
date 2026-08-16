@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { GeneratingDialog } from "./GeneratingDialog";
 import { Modal } from "../../components/Modal";
 import { api, ApiError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
@@ -40,6 +41,8 @@ export function LessonDialog({
       setBusy(false);
     }
   };
+
+  if (busy) return <GeneratingDialog topic={form.topic.trim()} />;
 
   return (
     <Modal
@@ -105,18 +108,9 @@ export function LessonDialog({
             </p>
           )}
 
-          {busy ? (
-            <div className="space-y-2">
-              <p className="text-sm text-muted">{t("teacher.generating")}</p>
-              <div className="skeleton h-3" />
-              <div className="skeleton h-3 w-4/5" />
-              <div className="skeleton h-3 w-3/5" />
-            </div>
-          ) : (
-            <button type="button" className="btn-primary w-full" onClick={submit}>
-              {t("teacher.generate")}
-            </button>
-          )}
+          <button type="button" className="btn-primary w-full" onClick={submit}>
+            {t("teacher.generate")}
+          </button>
         </div>
       )}
     </Modal>

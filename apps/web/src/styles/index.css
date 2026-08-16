@@ -130,6 +130,29 @@
     background-repeat: no-repeat;
   }
 
+  .ai-ring {
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      rgb(var(--teal)) 120deg,
+      rgb(var(--azure)) 240deg,
+      transparent 360deg
+    );
+  }
+
+  .ai-progress {
+    animation: aiProgress 1.6s ease-in-out infinite;
+  }
+
+  @keyframes aiProgress {
+    0% {
+      transform: translateX(-110%);
+    }
+    100% {
+      transform: translateX(320%);
+    }
+  }
+
   .tilt {
     transform-style: preserve-3d;
     transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
