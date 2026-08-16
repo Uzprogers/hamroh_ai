@@ -113,7 +113,7 @@ export function OnboardingDialog({ user }: { user: User }) {
         institution_name: form.institution_name.trim(),
         grade_level: role === "STUDENT" ? form.grade_level.trim() || undefined : undefined,
         subject: role === "TEACHER" ? form.subject.trim() || undefined : undefined,
-        phone: phone !== user.phone ? phone : undefined,
+        phone: valid && phone !== user.phone ? phone : undefined,
       });
     } catch (err) {
       setError(translateError(err instanceof ApiError ? err.code : "network"));
