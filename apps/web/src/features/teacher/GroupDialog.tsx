@@ -20,11 +20,16 @@ export function GroupDialog({ onClose, onCreated }: { onClose: () => void; onCre
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const isSchool = (user?.institution_type ?? "SCHOOL") === "SCHOOL";
+  const namedClass = gradeFromName(form.name) !== null;
+  const nameInvalid = isSchool && form.name.trim().length > 0 && !namedClass;
+  const ready = form.name.trim().length > 0 && form.subject.trim().length > 0 && !nameInvalid;
+
   const setName = (name: string) =>
     setForm((prev) => ({ ...prev, name, grade: gradeFromName(name) ?? prev.grade }));
 
   const submit = async () => {
-    if (!form.name.trim() || !form.subject.trim()) return;
+    if (!ready) return;
     setBusy(true);
     setError(null);
     try {
@@ -57,15 +62,22 @@ export function GroupDialog({ onClose, onCreated }: { onClose: () => void; onCre
       <div className="space-y-4">
         <div>
           <label className="label" htmlFor="group_name">
-            {t("teacher.groupName")}
+            {t(isSchool ? "teacher.className" : "teacher.groupName")}
           </label>
           <input
             id="group_name"
-            className="field"
+            className={`field ${nameInvalid ? "border-coral/60" : ""}`}
             value={form.name}
             placeholder="9-A"
             onChange={(event) => setName(event.target.value)}
           />
+          {isSchool && (
+            <p
+              className={`mt-2 text-start text-xs ${nameInvalid ? "text-coral" : "text-muted"}`}
+            >
+              {t(nameInvalid ? "teacher.className.invalid" : "teacher.className.hint")}
+            </p>
+          )}
         </div>
 
         <div>
@@ -138,7 +150,12 @@ export function GroupDialog({ onClose, onCreated }: { onClose: () => void; onCre
           </p>
         )}
 
-        <button type="button" className="btn-primary w-full" onClick={submit} disabled={busy}>
+        <button
+          type="button"
+          className="btn-primary w-full"
+          onClick={submit}
+          disabled={busy || !ready}
+        >
           {t("teacher.newGroup")}
         </button>
       </div>
