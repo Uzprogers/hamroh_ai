@@ -4,7 +4,7 @@ import { useAuth } from "./lib/auth";
 import { LoginPage } from "./features/auth/LoginPage";
 import { OnboardingPage } from "./features/auth/OnboardingPage";
 import { LandingPage } from "./features/landing/LandingPage";
-import { TeacherHome } from "./features/teacher/TeacherHome";
+import { TeacherWorkspace } from "./features/teacher/TeacherWorkspace";
 import { LessonPage } from "./features/teacher/LessonPage";
 import { StudentHome } from "./features/student/StudentHome";
 import { StudentLessonPage } from "./features/student/StudentLessonPage";
@@ -67,8 +67,7 @@ export function App() {
       <Routes>
         <Route path="/lesson/:id" element={<LessonPage />} />
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/" element={<TeacherHome />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<TeacherWorkspace />} />
       </Routes>
     </AppShell>
   );
