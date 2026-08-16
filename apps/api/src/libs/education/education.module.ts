@@ -13,11 +13,13 @@ import { GradingService } from "./application/services/grading.service";
 import { ResultsService } from "./application/services/results.service";
 import { AnalyticsService } from "./application/services/analytics.service";
 import { GroupAnalyticsService } from "./application/services/group-analytics.service";
+import { LessonPdfService } from "./application/services/lesson-pdf.service";
 import { GroupController } from "./presentation/group.controller";
 import { LessonController } from "./presentation/lesson.controller";
 import { SubmissionController } from "./presentation/submission.controller";
 import { ProfileController } from "./presentation/profile.controller";
 import { GroupAnalyticsController } from "./presentation/group-analytics.controller";
+import { LessonPdfController } from "./presentation/lesson-pdf.controller";
 import { AgentModule } from "../agent/agent.module";
 import { IdentityModule } from "../identity/identity.module";
 
@@ -41,6 +43,7 @@ import { IdentityModule } from "../identity/identity.module";
     SubmissionController,
     ProfileController,
     GroupAnalyticsController,
+    LessonPdfController,
   ],
   providers: [
     GroupService,
@@ -49,6 +52,7 @@ import { IdentityModule } from "../identity/identity.module";
     ResultsService,
     AnalyticsService,
     GroupAnalyticsService,
+    LessonPdfService,
   ],
   exports: [GroupService, LessonService, GradingService, ResultsService, AnalyticsService, TypeOrmModule],
 })

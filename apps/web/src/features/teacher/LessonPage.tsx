@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
+import { LessonPdfButton } from "./LessonPdfButton";
 import type { Assignment, GroupSummaryRow, Lesson, StudentResult } from "../../lib/types";
 
 export function LessonPage() {
@@ -60,13 +61,16 @@ export function LessonPage() {
             <h1 className="font-display text-3xl font-extrabold">{lesson.topic}</h1>
             <p className="mt-2 max-w-2xl text-muted">{lesson.objective}</p>
           </div>
-          {lesson.status === "ACTIVE" ? (
-            <span className="chip border-teal/40 text-teal">{t("teacher.published")}</span>
-          ) : (
-            <button type="button" className="btn-primary" onClick={activate}>
-              {t("teacher.publish")}
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <LessonPdfButton lessonId={lesson.id} />
+            {lesson.status === "ACTIVE" ? (
+              <span className="chip border-teal/40 text-teal">{t("teacher.published")}</span>
+            ) : (
+              <button type="button" className="btn-primary" onClick={activate}>
+                {t("teacher.publish")}
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
