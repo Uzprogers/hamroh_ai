@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
+import { MathText } from "../../components/MathText";
 import { useI18n } from "../../i18n/i18n";
 import type { TranslationKey } from "../../i18n/dictionary";
 import type { Assignment, Grade, Lesson } from "../../lib/types";
@@ -71,7 +72,7 @@ export function StudentLessonPage() {
                 </span>
               </div>
 
-              <p className="mt-3">{assignment.question}</p>
+              <p className="mt-3"><MathText text={assignment.question} /></p>
 
               <textarea
                 className="field mt-4 min-h-[120px] resize-none"

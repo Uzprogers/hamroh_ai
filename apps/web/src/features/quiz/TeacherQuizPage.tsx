@@ -4,6 +4,7 @@ import { ApiError, api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
 import { QuizBars, type BarDatum } from "./QuizBars";
+import { MathText } from "../../components/MathText";
 import { QuizJoinCode } from "./QuizJoinCode";
 import { QuizLeaderboard } from "./QuizLeaderboard";
 import { QuizTimer } from "./QuizTimer";
@@ -157,7 +158,7 @@ export function TeacherQuizPage() {
                     {t("quiz.question")} {state.index + 1}/{state.total}
                   </span>
                   <h2 className="font-display text-2xl font-extrabold leading-snug">
-                    {state.question.text}
+                    <MathText text={state.question.text} />
                   </h2>
                   <p className="mt-3 text-sm text-muted">
                     {t("quiz.answered")}: {answered.answered}/{answered.total}
@@ -179,7 +180,7 @@ export function TeacherQuizPage() {
                     } ${reveal && reveal.correct_index !== index ? "opacity-40" : ""}`}
                   >
                     <span className="font-mono text-xs">{QUIZ_TILE_GLYPH[index]}</span>
-                    <span className="min-w-0 flex-1 truncate">{option}</span>
+                    <MathText text={option} className="min-w-0 flex-1 truncate" />
                     {reveal?.correct_index === index && (
                       <span className="text-xs uppercase">{t("quiz.correct")}</span>
                     )}

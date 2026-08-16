@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { ApiError, api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
+import { MathText } from "../../components/MathText";
 import { QuizLeaderboard } from "./QuizLeaderboard";
 import { QuizTimer } from "./QuizTimer";
 import { useQuizRoom } from "./useQuizRoom";
@@ -225,7 +226,7 @@ export function StudentQuizPage() {
               {t("quiz.question")} {state.index + 1}/{state.total}
             </span>
             <h1 className="font-display text-2xl font-extrabold leading-snug">
-              {state.question.text}
+              <MathText text={state.question.text} />
             </h1>
           </div>
           <QuizTimer
@@ -257,7 +258,7 @@ export function StudentQuizPage() {
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-current font-mono text-sm">
                 {QUIZ_TILE_GLYPH[index]}
               </span>
-              <span className="min-w-0 flex-1">{option}</span>
+              <MathText text={option} className="min-w-0 flex-1" />
             </button>
           );
         })}

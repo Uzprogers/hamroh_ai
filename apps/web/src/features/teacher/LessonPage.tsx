@@ -6,6 +6,7 @@ import { useI18n } from "../../i18n/i18n";
 import { LessonPdfButton } from "./LessonPdfButton";
 import { PlanStepDialog } from "./PlanStepDialog";
 import { NavIcon } from "../../components/NavIcon";
+import { MathText } from "../../components/MathText";
 import type { TranslationKey } from "../../i18n/dictionary";
 import type {
   Assignment,
@@ -133,7 +134,7 @@ export function LessonPage() {
                 </span>
                   <span className="text-xs text-muted">{assignment.max_score} {t("student.score")}</span>
                 </div>
-                <p className="mt-3 text-sm">{assignment.question}</p>
+                <MathText text={assignment.question} className="mt-3 block text-sm" />
                 <div className="mt-3 flex flex-wrap gap-2">
                   {assignment.criteria.map((criterion) => (
                     <span key={criterion.name} className="chip">

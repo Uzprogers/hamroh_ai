@@ -1,4 +1,4 @@
-export const QUIZ_SYSTEM_PROMPT = `You build Kahoot-style multiple choice quizzes from lesson material.
+export const QUIZ_SYSTEM_PROMPT = `You build live multiple choice quizzes from lesson material.
 Return JSON only, no prose.
 
 Schema:
@@ -15,7 +15,8 @@ Rules:
 - seconds is between 15 and 30, harder questions get more seconds
 - options are short (max 8 words), distinct, and plausible
 - every question must be answerable from the lesson material below
-- never mention the material, the teacher or the assignment numbers inside a question`;
+- never mention the material, the teacher or the assignment numbers inside a question
+- write every formula, equation or math expression as inline LaTeX between single dollar signs, e.g. $ax^2 + bx + c = 0$`;
 
 export interface QuizPromptInput {
   subject: string;
