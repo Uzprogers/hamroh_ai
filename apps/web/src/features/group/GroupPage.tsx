@@ -2,61 +2,70 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Bars3D } from "./Bars3D";
 import { GrowthChip, GrowthList } from "./GrowthList";
+import { MetricBar } from "./MetricBar";
+import { MistakeDetailDialog } from "./MistakeDetailDialog";
+import { Panel } from "./Section";
+import { StudentDetailDialog } from "./StudentDetailDialog";
+import { TopicFilter } from "./TopicFilter";
 import { StatRing } from "../profile/StatRing";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
-import type { GroupAnalytics, GroupStudentAnalytics } from "./group.types";
+import type { GroupAnalytics, GroupMistakeTally, GroupStudentAnalytics } from "./group.types";
 
 const CHART_LIMIT = 8;
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="surface p-5 sm:p-6">
-      <h3 className="text-start font-display text-sm font-extrabold uppercase tracking-wide text-muted">
-        {title}
-      </h3>
-      <div className="mt-4">{children}</div>
-    </section>
-  );
-}
-
-function StudentCard({ student, rank }: { student: GroupStudentAnalytics; rank: number }) {
+function StudentCard({
+  student,
+  rank,
+  onOpen,
+}: {
+  student: GroupStudentAnalytics;
+  rank: number;
+  onOpen: () => void;
+}) {
   const { t } = useI18n();
 
   return (
-    <li className="surface p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <span className="chip">
-            {t("group.rank")} {rank}
-          </span>
-          <div className="mt-2 truncate text-start font-display text-base font-extrabold">
-            {student.name}
+    <li>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="surface w-full p-4 text-start transition duration-300 hover:-translate-y-0.5 hover:border-teal/50 focus:outline-none focus-visible:border-teal/70"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <span className="chip">
+              {t("group.rank")} {rank}
+            </span>
+            <div className="mt-2 truncate text-start font-display text-base font-extrabold">
+              {student.name}
+            </div>
           </div>
+          <GrowthChip value={student.growth_percent} />
         </div>
-        <GrowthChip value={student.growth_percent} />
-      </div>
 
-      <div className="mt-3 flex items-baseline justify-between gap-3">
-        <span className="font-mono text-sm">{student.average_percent}%</span>
-        <span className="text-start text-xs text-muted">
-          {student.submissions} {t("group.submissions")}
+        <div className="mt-3 flex items-baseline justify-between gap-3">
+          <span className="font-mono text-sm">{student.average_percent}%</span>
+          <span className="text-start text-xs text-muted">
+            {student.submissions} {t("group.submissions")}
+          </span>
+        </div>
+
+        <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-edge">
+          <span
+            className="block h-full rounded-full bg-gradient-to-r from-teal to-azure transition-[width] duration-700 ease-out"
+            style={{ width: `${student.average_percent}%` }}
+          />
         </span>
-      </div>
 
-      <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-edge">
-        <span
-          className="block h-full rounded-full bg-gradient-to-r from-teal to-azure transition-[width] duration-700 ease-out"
-          style={{ width: `${student.average_percent}%` }}
-        />
-      </span>
-
-      <div className="mt-3 text-start text-xs">
-        <span className={student.major_mistakes > 0 ? "text-coral" : "text-muted"}>
-          {t("teacher.majorMistakes")}: {student.major_mistakes}
-        </span>
-      </div>
+        <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+          <span className={student.major_mistakes > 0 ? "text-coral" : "text-muted"}>
+            {t("teacher.majorMistakes")}: {student.major_mistakes}
+          </span>
+          <span className="shrink-0 font-semibold text-teal">{t("group.detail")} →</span>
+        </div>
+      </button>
     </li>
   );
 }
@@ -67,15 +76,28 @@ export function GroupPage() {
   const { t } = useI18n();
   const [data, setData] = useState<GroupAnalytics | null>(null);
   const [failed, setFailed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [lessonId, setLessonId] = useState<string | null>(null);
+  const [openStudent, setOpenStudent] = useState<GroupStudentAnalytics | null>(null);
+  const [openMistake, setOpenMistake] = useState<GroupMistakeTally | null>(null);
 
   useEffect(() => {
     if (!id) return;
+    let cancelled = false;
+    const query = lessonId ? `?lesson_id=${encodeURIComponent(lessonId)}` : "";
+
     setFailed(false);
+    setBusy(true);
     api
-      .get<GroupAnalytics>(`/groups/${id}/analytics`, token)
-      .then(setData)
-      .catch(() => setFailed(true));
-  }, [id, token]);
+      .get<GroupAnalytics>(`/groups/${id}/analytics${query}`, token)
+      .then((value) => !cancelled && setData(value))
+      .catch(() => !cancelled && setFailed(true))
+      .finally(() => !cancelled && setBusy(false));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, token, lessonId]);
 
   if (failed) {
     return (
@@ -100,6 +122,10 @@ export function GroupPage() {
     );
   }
 
+  const lessons = data.lessons ?? [];
+  const mistakes = data.top_mistakes;
+  const mistakePeak = mistakes.length > 0 ? mistakes[0].count : 0;
+  const mistakeTotal = mistakes.reduce((sum, mistake) => sum + mistake.count, 0);
   const bars = data.students.slice(0, CHART_LIMIT).map((student) => ({
     id: student.student_id,
     label: student.name,
@@ -136,55 +162,84 @@ export function GroupPage() {
         </div>
       </header>
 
-      {data.students.length === 0 ? (
-        <p className="mt-4 text-start text-sm text-muted">{t("group.empty")}</p>
-      ) : (
-        <>
-          <div className="mt-4">
-            <Panel title={t("group.students")}>
-              <Bars3D items={bars} />
-            </Panel>
-          </div>
+      {lessons.length > 0 && (
+        <div className="mt-4">
+          <TopicFilter lessons={lessons} activeId={lessonId} onSelect={setLessonId} />
+        </div>
+      )}
 
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data.students.map((student, index) => (
-              <StudentCard key={student.student_id} student={student} rank={index + 1} />
-            ))}
-          </ul>
+      <div className={busy ? "opacity-60 transition-opacity" : "transition-opacity"}>
+        {data.students.length === 0 ? (
+          <p className="mt-4 text-start text-sm text-muted">{t("group.empty")}</p>
+        ) : (
+          <>
+            <div className="mt-4">
+              <Panel title={t("group.students")}>
+                <Bars3D items={bars} />
+              </Panel>
+            </div>
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            <Panel title={t("group.growth.leaders")}>
-              <GrowthList leaders={data.growth_leaders} />
-            </Panel>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {data.students.map((student, index) => (
+                <StudentCard
+                  key={student.student_id}
+                  student={student}
+                  rank={index + 1}
+                  onOpen={() => setOpenStudent(student)}
+                />
+              ))}
+            </ul>
 
-            <Panel title={t("group.mistakes.top")}>
-              {data.top_mistakes.length === 0 ? (
-                <p className="text-start text-sm text-muted">{t("group.empty")}</p>
-              ) : (
-                <ul className="space-y-3.5">
-                  {data.top_mistakes.map((mistake) => (
-                    <li key={mistake.label}>
-                      <div className="flex items-baseline justify-between gap-3">
-                        <span className="truncate text-start text-sm font-semibold">
-                          {mistake.label}
-                        </span>
-                        <span className="font-mono text-xs text-muted">{mistake.count}</span>
-                      </div>
-                      <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-edge">
-                        <span
-                          className="block h-full rounded-full bg-gradient-to-r from-amber to-coral transition-[width] duration-700 ease-out"
-                          style={{
-                            width: `${(mistake.count / data.top_mistakes[0].count) * 100}%`,
-                          }}
-                        />
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Panel>
-          </div>
-        </>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Panel title={t("group.growth.leaders")}>
+                <GrowthList leaders={data.growth_leaders} />
+              </Panel>
+
+              <Panel title={t("group.mistakes.top")}>
+                {mistakes.length === 0 ? (
+                  <p className="text-start text-sm text-muted">{t("group.empty")}</p>
+                ) : (
+                  <ul className="space-y-3.5">
+                    {mistakes.map((mistake, index) => (
+                      <li key={mistake.label}>
+                        <button
+                          type="button"
+                          onClick={() => setOpenMistake(mistake)}
+                          className="w-full rounded-xl px-1 py-1 text-start transition hover:bg-panel/60 focus:outline-none focus-visible:bg-panel/60"
+                        >
+                          <MetricBar
+                            label={mistake.label}
+                            value={String(mistake.count)}
+                            percent={mistakePeak > 0 ? (mistake.count / mistakePeak) * 100 : 0}
+                            tone="warm"
+                            delayMs={index * 60}
+                          />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Panel>
+            </div>
+          </>
+        )}
+      </div>
+
+      {id && openStudent && (
+        <StudentDetailDialog
+          groupId={id}
+          studentId={openStudent.student_id}
+          studentName={openStudent.name}
+          onClose={() => setOpenStudent(null)}
+        />
+      )}
+
+      {openMistake && (
+        <MistakeDetailDialog
+          mistake={openMistake}
+          total={mistakeTotal}
+          onClose={() => setOpenMistake(null)}
+        />
       )}
     </div>
   );
