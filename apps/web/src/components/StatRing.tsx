@@ -1,4 +1,4 @@
-import { useCountUp } from "../../lib/useCountUp";
+import { useCountUp } from "../lib/useCountUp";
 
 const RADIUS = 52;
 const LENGTH = 2 * Math.PI * RADIUS;

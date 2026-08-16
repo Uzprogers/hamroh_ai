@@ -8,7 +8,12 @@ import { CurrentUser } from "../../../core/decorators/current-user.decorator";
 import { Roles, RolesGuard } from "../../../core/decorators/roles.decorator";
 import { Role } from "../../identity/config/identity.enums";
 import { RequestUser } from "../../identity/infrastructure/jwt.strategy";
-import { QuizResults, QuizSummary } from "../application/types/quiz.types";
+import {
+  QuizAttempt,
+  QuizReport,
+  QuizResults,
+  QuizSummary,
+} from "../application/types/quiz.types";
 
 @Controller("quiz")
 @UseGuards(AuthGuard("jwt"), RolesGuard)
@@ -37,6 +42,21 @@ export class QuizController {
   @Roles(Role.STUDENT)
   join(@CurrentUser() user: RequestUser, @Body() dto: JoinQuizGroupDto): Promise<QuizSummary> {
     return this.quizService.joinByPin(dto.pin, user.id);
+  }
+
+  @Get("mine")
+  @Roles(Role.STUDENT)
+  mine(@CurrentUser() user: RequestUser): Promise<QuizAttempt[]> {
+    return this.quizService.attempts(user.id);
+  }
+
+  @Get("sessions/:id/report")
+  @Roles(Role.STUDENT)
+  report(
+    @CurrentUser() user: RequestUser,
+    @Param("id", ParseUUIDPipe) id: string,
+  ): Promise<QuizReport> {
+    return this.quizService.report(id, user.id);
   }
 
   @Get("sessions/:id/results")

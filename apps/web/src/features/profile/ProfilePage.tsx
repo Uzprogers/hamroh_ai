@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { METRIC_ACCENT, METRIC_LABEL } from "./profile.metrics";
-import { StatRing } from "./StatRing";
+import { StatRing } from "../../components/StatRing";
 import { TrendChart } from "./TrendChart";
 import { Avatar } from "../../components/Avatar";
 import { api } from "../../lib/api";

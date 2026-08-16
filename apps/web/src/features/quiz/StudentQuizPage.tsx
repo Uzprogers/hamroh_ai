@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { NavIcon } from "../../components/NavIcon";
 import { ApiError, api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
@@ -245,6 +246,16 @@ export function StudentQuizPage() {
               {t("quiz.correct")}: {myRank.row.correct}/{myRank.row.total}
             </p>
           )}
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link to={`/quiz/report/${summary.id}`} className="btn-primary">
+              <NavIcon name="stats" className="h-4 w-4" />
+              {t("quiz.report.open")}
+            </Link>
+            <Link to="/" className="btn-ghost">
+              {t("student.title")}
+            </Link>
+          </div>
         </section>
 
         <section className="surface p-6">

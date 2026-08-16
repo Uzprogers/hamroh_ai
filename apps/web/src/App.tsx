@@ -11,6 +11,7 @@ import { StudentLessonPage } from "./features/student/StudentLessonPage";
 import { ProfilePage } from "./features/profile/ProfilePage";
 import { GroupPage } from "./features/group/GroupPage";
 import { StudentQuizPage } from "./features/quiz/StudentQuizPage";
+import { QuizReportPage } from "./features/quiz/QuizReportPage";
 import { TeacherQuizPage } from "./features/quiz/TeacherQuizPage";
 import { SessionPage } from "./features/session/SessionPage";
 
@@ -56,6 +57,7 @@ export function App() {
                 <Route path="/lesson/:id" element={<StudentLessonPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/quiz" element={<StudentQuizPage />} />
+                <Route path="/quiz/report/:id" element={<QuizReportPage />} />
                 <Route path="*" element={<StudentWorkspace />} />
               </Routes>
             </AppShell>

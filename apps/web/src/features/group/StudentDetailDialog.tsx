@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Modal } from "../../components/Modal";
-import { StatRing } from "../profile/StatRing";
+import { StatRing } from "../../components/StatRing";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";

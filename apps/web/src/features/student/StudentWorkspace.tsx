@@ -5,12 +5,14 @@ import { JoinCodeDialog } from "./JoinCodeDialog";
 import { LessonCards } from "./LessonCards";
 import { ResultList } from "./ResultList";
 import { STUDENT_NAV } from "./student.nav";
+import { QuizAttemptList } from "../quiz/QuizAttemptList";
 import { NavIcon } from "../../components/NavIcon";
 import { Panel } from "../../components/Panel";
 import { WorkspaceNav } from "../../components/WorkspaceNav";
 import { api, ApiError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n, useTranslateError } from "../../i18n/i18n";
+import type { QuizAttempt } from "../quiz/quiz.types";
 import type { Lesson, StudentGroup, StudentResult } from "../../lib/types";
 
 const OVERVIEW_LIMIT = 4;
@@ -32,19 +34,22 @@ export function StudentWorkspace() {
   const [groups, setGroups] = useState<StudentGroup[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [results, setResults] = useState<StudentResult[]>([]);
+  const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
 
   const reload = useCallback(async () => {
     try {
-      const [nextGroups, nextLessons, nextResults] = await Promise.all([
+      const [nextGroups, nextLessons, nextResults, nextAttempts] = await Promise.all([
         api.get<StudentGroup[]>("/groups/mine", token),
         api.get<Lesson[]>("/lessons/mine", token),
         api.get<StudentResult[]>("/results/mine", token),
+        api.get<QuizAttempt[]>("/quiz/mine", token),
       ]);
       setGroups(nextGroups);
       setLessons(nextLessons);
       setResults(nextResults);
+      setAttempts(nextAttempts);
     } catch (err) {
       setError(translateError(err instanceof ApiError ? err.code : "network"));
     }
@@ -66,7 +71,7 @@ export function StudentWorkspace() {
 
   const counts: Record<string, number> = {
     "/lessons": lessons.length,
-    "/results": results.length,
+    "/results": results.length + attempts.length,
   };
 
   const openJoin = (
@@ -153,9 +158,14 @@ export function StudentWorkspace() {
           <Route
             path="/results"
             element={
-              <Panel title={t("student.myResults")}>
-                <ResultList results={results} />
-              </Panel>
+              <div className="space-y-4">
+                <Panel title={t("quiz.attempts")}>
+                  <QuizAttemptList attempts={attempts} />
+                </Panel>
+                <Panel title={t("student.written")}>
+                  <ResultList results={results} />
+                </Panel>
+              </div>
             }
           />
           <Route
@@ -175,8 +185,22 @@ export function StudentWorkspace() {
                 >
                   <LessonCards lessons={lessons} limit={OVERVIEW_LIMIT} />
                 </Panel>
+                {attempts.length > 0 && (
+                  <Panel
+                    title={t("quiz.attempts")}
+                    aside={
+                      attempts.length > OVERVIEW_LIMIT ? (
+                        <Link to="/results" className="chip hover:border-teal/50 hover:text-teal">
+                          {t("student.all")}
+                        </Link>
+                      ) : undefined
+                    }
+                  >
+                    <QuizAttemptList attempts={attempts} limit={OVERVIEW_LIMIT} />
+                  </Panel>
+                )}
                 <Panel
-                  title={t("student.myResults")}
+                  title={t("student.written")}
                   aside={
                     results.length > OVERVIEW_LIMIT ? (
                       <Link to="/results" className="chip hover:border-teal/50 hover:text-teal">

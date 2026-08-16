@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Not, Repository } from "typeorm";
+import { In, Not, Repository } from "typeorm";
 import { QuizSessionOrmEntity } from "../../infrastructure/typeorm/quiz-session.orm-entity";
 import { QuizAnswerOrmEntity } from "../../infrastructure/typeorm/quiz-answer.orm-entity";
 import { LessonOrmEntity } from "../../../education/infrastructure/typeorm/lesson.orm-entity";
@@ -40,7 +40,9 @@ import {
   LeaderboardRow,
   QuestionStat,
   QuizAccess,
+  QuizAttempt,
   QuizQuestion,
+  QuizReport,
   QuizResults,
   QuizSessionSummary,
   QuizSummary,
@@ -63,6 +65,26 @@ interface QuestionStatRaw {
   correct_count: string;
   total_count: string;
   avg_ms: string;
+}
+
+interface AttemptRaw {
+  session_id: string;
+  score: string;
+  correct: string;
+  answered: string;
+  avg_ms: string;
+}
+
+interface StudentTotalRaw {
+  session_id: string;
+  student_id: string;
+  total: string;
+}
+
+interface SessionMeta {
+  lesson_topic: string;
+  group_name: string;
+  subject: string;
 }
 
 @Injectable()
@@ -307,6 +329,182 @@ export class QuizService {
     return this.buildResults(session);
   }
 
+  async attempts(studentId: string): Promise<QuizAttempt[]> {
+    const mine = await this.answerRepo
+      .createQueryBuilder("a")
+      .select("a.session_id", "session_id")
+      .addSelect("COALESCE(SUM(a.score), 0)", "score")
+      .addSelect("COUNT(*) FILTER (WHERE a.correct)", "correct")
+      .addSelect("COUNT(*)", "answered")
+      .addSelect("COALESCE(AVG(a.elapsed_ms), 0)", "avg_ms")
+      .where("a.student_id = :studentId", { studentId })
+      .groupBy("a.session_id")
+      .getRawMany<AttemptRaw>();
+
+    if (!mine.length) return [];
+
+    const sessions = await this.sessionRepo.find({
+      where: { id: In(mine.map((row) => row.session_id)) },
+    });
+    const meta = await this.sessionMeta(sessions);
+    const ranking = await this.ranking(sessions.map((session) => session.id));
+    const byId = new Map(sessions.map((session) => [session.id, session]));
+
+    return mine
+      .map((row) => {
+        const session = byId.get(row.session_id);
+        return session ? this.toAttempt(session, row, meta, ranking, studentId) : null;
+      })
+      .filter((attempt): attempt is QuizAttempt => attempt !== null)
+      .sort((left, right) => right.played_at.getTime() - left.played_at.getTime());
+  }
+
+  async report(sessionId: string, studentId: string): Promise<QuizReport> {
+    const session = await this.byId(sessionId);
+
+    const answers = await this.answerRepo.find({
+      where: { session_id: session.id, student_id: studentId },
+      order: { question_index: "ASC" },
+    });
+    if (!answers.length) throw new ForbiddenException(QuizErrorCode.NOT_GROUP_MEMBER);
+
+    const [meta, ranking, stats] = await Promise.all([
+      this.sessionMeta([session]),
+      this.ranking([session.id]),
+      this.questionStats(session.id),
+    ]);
+
+    const mine = {
+      session_id: session.id,
+      score: String(answers.reduce((sum, answer) => sum + answer.score, 0)),
+      correct: String(answers.filter((answer) => answer.correct).length),
+      answered: String(answers.length),
+      avg_ms: String(
+        answers.reduce((sum, answer) => sum + answer.elapsed_ms, 0) / (answers.length || 1),
+      ),
+    };
+
+    const byIndex = new Map(answers.map((answer) => [answer.question_index, answer]));
+
+    return {
+      attempt: this.toAttempt(session, mine, meta, ranking, studentId),
+      answers: session.questions.map((question, index) => {
+        const answer = byIndex.get(index) ?? null;
+        const stat = stats.get(index);
+        const played = Number(stat?.total_count ?? 0);
+        return {
+          index,
+          text: question.text,
+          options: question.options,
+          correct_index: question.correct_index,
+          chosen_index: answer?.option_index ?? null,
+          correct: answer?.correct ?? false,
+          elapsed_ms: answer?.elapsed_ms ?? 0,
+          score: answer?.score ?? 0,
+          seconds: question.seconds,
+          class_correct_percent: played
+            ? Math.round((Number(stat?.correct_count ?? 0) / played) * 100)
+            : 0,
+        };
+      }),
+    };
+  }
+
+  private toAttempt(
+    session: QuizSessionOrmEntity,
+    row: AttemptRaw,
+    meta: Map<string, SessionMeta>,
+    ranking: Map<string, string[]>,
+    studentId: string,
+  ): QuizAttempt {
+    const board = ranking.get(session.id) ?? [];
+    const place = board.indexOf(studentId);
+    const info = meta.get(session.id);
+
+    return {
+      session_id: session.id,
+      pin: session.pin,
+      lesson_topic: info?.lesson_topic ?? "",
+      group_name: info?.group_name ?? "",
+      subject: info?.subject ?? "",
+      status: session.status,
+      played_at: session.ended_at ?? session.started_at ?? session.created_at,
+      score: Number(row.score),
+      correct: Number(row.correct),
+      answered: Number(row.answered),
+      total: session.questions.length,
+      rank: place < 0 ? 0 : place + 1,
+      players: board.length,
+      avg_ms: Math.round(Number(row.avg_ms)),
+    };
+  }
+
+  private async sessionMeta(
+    sessions: QuizSessionOrmEntity[],
+  ): Promise<Map<string, SessionMeta>> {
+    if (!sessions.length) return new Map();
+
+    const lessons = await this.lessonRepo.find({
+      where: { id: In(sessions.map((session) => session.lesson_id)) },
+    });
+    const groups = lessons.length
+      ? await this.groupRepo.find({ where: { id: In(lessons.map((lesson) => lesson.group_id)) } })
+      : [];
+
+    const lessonById = new Map(lessons.map((lesson) => [lesson.id, lesson]));
+    const groupById = new Map(groups.map((group) => [group.id, group]));
+
+    return new Map(
+      sessions.map((session) => {
+        const lesson = lessonById.get(session.lesson_id);
+        const group = lesson ? groupById.get(lesson.group_id) : undefined;
+        return [
+          session.id,
+          {
+            lesson_topic: lesson?.topic ?? "",
+            group_name: group?.name ?? "",
+            subject: group?.subject ?? "",
+          },
+        ];
+      }),
+    );
+  }
+
+  private async ranking(sessionIds: string[]): Promise<Map<string, string[]>> {
+    if (!sessionIds.length) return new Map();
+
+    const rows = await this.answerRepo
+      .createQueryBuilder("a")
+      .select("a.session_id", "session_id")
+      .addSelect("a.student_id", "student_id")
+      .addSelect("COALESCE(SUM(a.score), 0)", "total")
+      .where("a.session_id IN (:...sessionIds)", { sessionIds })
+      .groupBy("a.session_id")
+      .addGroupBy("a.student_id")
+      .orderBy("COALESCE(SUM(a.score), 0)", "DESC")
+      .getRawMany<StudentTotalRaw>();
+
+    const board = new Map<string, string[]>();
+    rows.forEach((row) => {
+      board.set(row.session_id, [...(board.get(row.session_id) ?? []), row.student_id]);
+    });
+    return board;
+  }
+
+  private async questionStats(sessionId: string): Promise<Map<number, QuestionStatRaw>> {
+    const rows = await this.answerRepo
+      .createQueryBuilder("a")
+      .select("a.question_index", "question_index")
+      .addSelect("COUNT(*) FILTER (WHERE a.correct)", "correct_count")
+      .addSelect("COUNT(*)", "total_count")
+      .addSelect("COALESCE(AVG(a.elapsed_ms), 0)", "avg_ms")
+      .where("a.session_id = :sessionId", { sessionId })
+      .groupBy("a.question_index")
+      .getRawMany<QuestionStatRaw>();
+
+    return new Map(rows.map((row) => [Number(row.question_index), row]));
+  }
+
   async buildResults(session: QuizSessionOrmEntity): Promise<QuizResults> {
     const total = session.questions.length;
 
@@ -335,17 +533,7 @@ export class QuizService {
       avg_ms: Math.round(Number(row.avg_ms)),
     }));
 
-    const statRaw = await this.answerRepo
-      .createQueryBuilder("a")
-      .select("a.question_index", "question_index")
-      .addSelect("COUNT(*) FILTER (WHERE a.correct)", "correct_count")
-      .addSelect("COUNT(*)", "total_count")
-      .addSelect("COALESCE(AVG(a.elapsed_ms), 0)", "avg_ms")
-      .where("a.session_id = :sessionId", { sessionId: session.id })
-      .groupBy("a.question_index")
-      .getRawMany<QuestionStatRaw>();
-
-    const byIndex = new Map(statRaw.map((row) => [Number(row.question_index), row]));
+    const byIndex = await this.questionStats(session.id);
 
     const questions: QuestionStat[] = session.questions.map((question, index) => {
       const row = byIndex.get(index);

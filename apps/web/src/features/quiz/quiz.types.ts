@@ -84,3 +84,38 @@ export interface QuizResults {
   leaderboard: LeaderboardRow[];
   questions: QuestionStat[];
 }
+
+export interface QuizAttempt {
+  session_id: string;
+  pin: string;
+  lesson_topic: string;
+  group_name: string;
+  subject: string;
+  status: QuizStatus;
+  played_at: string;
+  score: number;
+  correct: number;
+  answered: number;
+  total: number;
+  rank: number;
+  players: number;
+  avg_ms: number;
+}
+
+export interface QuizAnswerReview {
+  index: number;
+  text: string;
+  options: string[];
+  correct_index: number;
+  chosen_index: number | null;
+  correct: boolean;
+  elapsed_ms: number;
+  score: number;
+  seconds: number;
+  class_correct_percent: number;
+}
+
+export interface QuizReport {
+  attempt: QuizAttempt;
+  answers: QuizAnswerReview[];
+}
