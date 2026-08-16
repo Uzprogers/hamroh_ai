@@ -13,17 +13,20 @@ const STEPS: TranslationKey[] = [
 
 const STEP_MS = 2600;
 
-export function GeneratingDialog({ topic }: { topic: string }) {
+export function GeneratingDialog({ topic, ready = false }: { topic: string; ready?: boolean }) {
   const { t } = useI18n();
   const [step, setStep] = useState(0);
 
   useEffect(() => {
+    if (ready) return;
     const timer = setInterval(
       () => setStep((prev) => Math.min(prev + 1, STEPS.length - 1)),
       STEP_MS,
     );
     return () => clearInterval(timer);
-  }, []);
+  }, [ready]);
+
+  const current = ready ? STEPS.length : step;
 
   return createPortal(
     <div className="fixed inset-0 z-50 grid place-items-center bg-ink/80 p-5 backdrop-blur-md">
@@ -33,23 +36,25 @@ export function GeneratingDialog({ topic }: { topic: string }) {
         <div className="relative grid place-items-center">
           <span className="absolute h-28 w-28 rounded-full bg-gradient-to-br from-teal/30 to-azure/30 blur-2xl" />
           <span className="relative grid h-24 w-24 place-items-center rounded-full">
-            <span className="ai-ring absolute inset-0 animate-spin rounded-full" />
+            <span
+              className={`ai-ring absolute inset-0 rounded-full ${ready ? "" : "animate-spin"}`}
+            />
             <span className="absolute inset-[3px] rounded-full bg-panel" />
-            <span className="relative animate-pulse text-teal">
-              <NavIcon name="spark" className="h-9 w-9" />
+            <span className={`relative text-teal ${ready ? "animate-rise" : "animate-pulse"}`}>
+              <NavIcon name={ready ? "check" : "spark"} className="h-9 w-9" />
             </span>
           </span>
         </div>
 
         <h3 className="relative mt-6 text-center font-display text-lg font-extrabold">
-          {t("teacher.generating")}
+          {t(ready ? "teacher.generating.done" : "teacher.generating")}
         </h3>
         <p className="relative mt-1 truncate text-center text-xs text-muted">{topic}</p>
 
         <ol className="relative mt-6 space-y-2.5">
           {STEPS.map((key, index) => {
-            const done = index < step;
-            const active = index === step;
+            const done = index < current;
+            const active = index === current;
             return (
               <li
                 key={key}
@@ -80,9 +85,15 @@ export function GeneratingDialog({ topic }: { topic: string }) {
         </ol>
 
         <div className="relative mt-6 h-1 overflow-hidden rounded-full bg-edge">
-          <span className="ai-progress block h-full w-1/3 rounded-full bg-gradient-to-r from-teal to-azure" />
+          <span
+            className={`block h-full rounded-full bg-gradient-to-r from-teal to-azure ${
+              ready ? "w-full transition-[width] duration-500" : "ai-progress w-1/3"
+            }`}
+          />
         </div>
-        <p className="relative mt-3 text-center text-xs text-muted">{t("teacher.generating.hint")}</p>
+        <p className={`relative mt-3 text-center text-xs ${ready ? "text-teal" : "text-muted"}`}>
+          {t(ready ? "teacher.generating.opening" : "teacher.generating.hint")}
+        </p>
       </div>
     </div>,
     document.body,

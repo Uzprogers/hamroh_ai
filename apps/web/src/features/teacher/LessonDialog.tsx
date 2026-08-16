@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { GeneratingDialog } from "./GeneratingDialog";
 import { Modal } from "../../components/Modal";
 import { api, ApiError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useI18n, useTranslateError } from "../../i18n/i18n";
-import type { Group } from "../../lib/types";
+import type { Group, Lesson } from "../../lib/types";
+
+const READY_MS = 900;
 
 export function LessonDialog({
   groups,
@@ -18,31 +21,42 @@ export function LessonDialog({
   const { t } = useI18n();
   const translateError = useTranslateError();
   const { token } = useAuth();
+  const navigate = useNavigate();
 
   const [groupId, setGroupId] = useState(groups[0]?.id ?? "");
   const [form, setForm] = useState({ topic: "", note: "" });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!createdId) return;
+    const timer = window.setTimeout(() => {
+      onClose();
+      navigate(`/lesson/${createdId}`);
+    }, READY_MS);
+    return () => window.clearTimeout(timer);
+  }, [createdId]);
 
   const submit = async () => {
     if (!groupId || form.topic.trim().length < 3) return;
     setBusy(true);
     setError(null);
     try {
-      await api.post(
+      const created = await api.post<{ lesson: Lesson }>(
         "/lessons",
         { group_id: groupId, topic: form.topic.trim(), note: form.note.trim() || undefined },
         token,
       );
       onCreated();
-      onClose();
+      setCreatedId(created.lesson.id);
     } catch (err) {
       setError(translateError(err instanceof ApiError ? err.code : "network"));
       setBusy(false);
     }
   };
 
-  if (busy) return <GeneratingDialog topic={form.topic.trim()} />;
+  if (busy) return <GeneratingDialog topic={form.topic.trim()} ready={Boolean(createdId)} />;
 
   return (
     <Modal
