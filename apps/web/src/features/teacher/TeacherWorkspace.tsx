@@ -4,6 +4,7 @@ import { GroupDialog } from "./GroupDialog";
 import { GroupList } from "./GroupList";
 import { LessonDialog } from "./LessonDialog";
 import { LessonList } from "./LessonList";
+import { RecentLessons } from "./RecentLessons";
 import { TEACHER_NAV } from "./teacher.nav";
 import { NavIcon } from "../../components/NavIcon";
 import { api, ApiError } from "../../lib/api";
@@ -164,7 +165,7 @@ export function TeacherWorkspace() {
             element={
               <div className="space-y-4">
                 <Section title={t("teacher.recent")} action={newLesson}>
-                  <LessonList lessons={lessons.slice(0, 4)} />
+                  <RecentLessons lessons={lessons} groups={groups} />
                 </Section>
                 <Section title={t("teacher.groups")} action={newGroup}>
                   <GroupList groups={groups} />
