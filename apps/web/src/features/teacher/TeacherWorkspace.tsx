@@ -155,7 +155,7 @@ export function TeacherWorkspace() {
             path="/lessons"
             element={
               <Section title={t("teacher.lessons")} action={newLesson}>
-                <LessonList lessons={lessons} />
+                <LessonList lessons={lessons} groups={groups} />
               </Section>
             }
           />

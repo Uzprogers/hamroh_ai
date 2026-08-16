@@ -8,6 +8,7 @@ const CODE_KEYS: Record<string, TranslationKey> = {
   QUIZ_ENDED: "quiz.ended",
   QUIZ_NOT_FOUND: "error.unknown",
   INVALID_PIN: "error.unknown",
+  GRADE_MISMATCH: "error.GRADE_MISMATCH",
 };
 
 export function quizErrorKey(code: string | null): TranslationKey | null {

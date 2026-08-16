@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { ApiError, api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
-import { useI18n } from "../../i18n/i18n";
+import { useI18n, useTranslateError } from "../../i18n/i18n";
 import { NavIcon } from "../../components/NavIcon";
 import type { SchoolGroup } from "../../lib/types";
 
@@ -10,6 +10,7 @@ const CODE_LENGTH = 6;
 export function JoinGroupPanel({ onJoined }: { onJoined: () => void }) {
   const { token, user, refresh } = useAuth();
   const { t } = useI18n();
+  const translateError = useTranslateError();
 
   const [code, setCode] = useState("");
   const [groups, setGroups] = useState<SchoolGroup[]>([]);
@@ -59,6 +60,8 @@ export function JoinGroupPanel({ onJoined }: { onJoined: () => void }) {
     }
   };
 
+  const current = groups.find((group) => group.is_member) ?? null;
+
   return (
     <section className="surface p-6 sm:p-7">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -92,7 +95,17 @@ export function JoinGroupPanel({ onJoined }: { onJoined: () => void }) {
       <p className="mt-2 text-start text-xs text-muted">{t("group.join.transferHint")}</p>
 
       <div className="mt-6">
-        <span className="label">{t("group.join.school")}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="label">{t("group.join.school")}</span>
+          {current && (
+            <span className="chip border-teal/40 text-teal">
+              {t("group.join.current")}: {current.name}
+            </span>
+          )}
+        </div>
+        <p className="mb-3 text-start text-xs text-muted">
+          {current ? t("group.join.switchHint") : t("group.join.single")}
+        </p>
         {groups.length === 0 ? (
           <p className="text-start text-sm text-muted">{t("group.join.schoolEmpty")}</p>
         ) : (
@@ -123,7 +136,7 @@ export function JoinGroupPanel({ onJoined }: { onJoined: () => void }) {
                     disabled={busy === group.id}
                     onClick={() => void joinGroup(group.id)}
                   >
-                    {t("group.join.action")}
+                    {t(current ? "group.join.switch" : "group.join.action")}
                   </button>
                 )}
               </li>
@@ -132,7 +145,7 @@ export function JoinGroupPanel({ onJoined }: { onJoined: () => void }) {
         )}
       </div>
 
-      {failure && <p className="mt-4 text-start text-sm text-coral">{t("group.join.failed")}</p>}
+      {failure && <p className="mt-4 text-start text-sm text-coral">{translateError(failure)}</p>}
     </section>
   );
 }

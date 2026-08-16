@@ -90,6 +90,7 @@ export interface Group {
   name: string;
   subject: string;
   code: string;
+  grade_level: number | null;
   institution_type: InstitutionType;
   member_count?: number;
 }

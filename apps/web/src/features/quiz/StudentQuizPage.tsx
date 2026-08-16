@@ -121,6 +121,7 @@ export function StudentQuizPage() {
           {!summary.is_member && (
             <div className="mt-5 space-y-2 rounded-2xl border border-teal/40 bg-teal/10 px-4 py-3 text-start text-sm text-teal">
               <p>{t("group.join.notice")}</p>
+              <p className="text-teal/80">{t("group.join.switchHint")}</p>
               {summary.school && summary.school !== user?.institution_name && (
                 <p className="text-amber">
                   {t("group.join.transfer")}: {summary.school}

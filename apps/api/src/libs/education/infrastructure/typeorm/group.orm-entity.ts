@@ -20,6 +20,9 @@ export class GroupOrmEntity {
   @Column({ type: "varchar", length: 8 })
   code: string;
 
+  @Column({ type: "int", nullable: true })
+  grade_level: number | null;
+
   @Column({ type: "text" })
   institution_type: InstitutionType;
 

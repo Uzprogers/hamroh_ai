@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Modal } from "../../components/Modal";
+import { GRADE_OPTIONS, gradeFromName } from "./group.const";
 import { TUTOR_COURSES } from "../auth/onboarding.courses";
 import { api, ApiError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
@@ -11,9 +12,16 @@ export function GroupDialog({ onClose, onCreated }: { onClose: () => void; onCre
   const translateError = useTranslateError();
   const { token, user } = useAuth();
 
-  const [form, setForm] = useState({ name: "", subject: "" });
+  const [form, setForm] = useState<{ name: string; subject: string; grade: number | null }>({
+    name: "",
+    subject: "",
+    grade: null,
+  });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const setName = (name: string) =>
+    setForm((prev) => ({ ...prev, name, grade: gradeFromName(name) ?? prev.grade }));
 
   const submit = async () => {
     if (!form.name.trim() || !form.subject.trim()) return;
@@ -25,6 +33,7 @@ export function GroupDialog({ onClose, onCreated }: { onClose: () => void; onCre
         {
           name: form.name.trim(),
           subject: form.subject.trim(),
+          grade_level: form.grade ?? undefined,
           institution_type: user?.institution_type ?? "SCHOOL",
         },
         token,
@@ -55,8 +64,40 @@ export function GroupDialog({ onClose, onCreated }: { onClose: () => void; onCre
             className="field"
             value={form.name}
             placeholder="9-A"
-            onChange={(event) => setForm({ ...form, name: event.target.value })}
+            onChange={(event) => setName(event.target.value)}
           />
+        </div>
+
+        <div>
+          <span className="label">{t("teacher.grade")}</span>
+          <div className="flex flex-wrap gap-2">
+            {GRADE_OPTIONS.map((grade) => (
+              <button
+                key={grade}
+                type="button"
+                onClick={() => setForm({ ...form, grade })}
+                className={`min-w-9 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                  form.grade === grade
+                    ? "border-teal/60 bg-gradient-to-r from-teal/25 to-azure/20 text-paper"
+                    : "border-edge bg-panel/60 text-muted hover:border-teal/40"
+                }`}
+              >
+                {grade}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, grade: null })}
+              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                form.grade === null
+                  ? "border-teal/60 bg-gradient-to-r from-teal/25 to-azure/20 text-paper"
+                  : "border-edge bg-panel/60 text-muted hover:border-teal/40"
+              }`}
+            >
+              {t("teacher.grade.any")}
+            </button>
+          </div>
+          <p className="mt-2 text-start text-xs text-muted">{t("teacher.grade.hint")}</p>
         </div>
 
         <div>
