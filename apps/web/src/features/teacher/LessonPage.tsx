@@ -35,7 +35,7 @@ export function LessonPage() {
       .then(({ lesson: nextLesson, assignments: nextAssignments }) => {
         setLesson(nextLesson);
         setAssignments(nextAssignments);
-        return api.get<GroupSummaryRow[]>(`/groups/${nextLesson.group_id}/summary`, token);
+        return api.get<GroupSummaryRow[]>(`/lessons/${nextLesson.id}/summary`, token);
       })
       .then(setSummary)
       .catch(() => undefined);

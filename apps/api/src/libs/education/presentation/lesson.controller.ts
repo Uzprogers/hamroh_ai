@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { LessonService } from "../application/services/lesson.service";
+import { ResultsService } from "../application/services/results.service";
 import { CreateLessonDto } from "../application/dto/create-lesson.dto";
 import { LessonStatusDto } from "../application/dto/lesson-status.dto";
 import { AuthService } from "../../identity/application/services/auth.service";
@@ -14,6 +15,7 @@ import { RequestUser } from "../../identity/infrastructure/jwt.strategy";
 export class LessonController {
   constructor(
     private readonly lessonService: LessonService,
+    private readonly resultsService: ResultsService,
     private readonly authService: AuthService,
   ) {}
 
@@ -34,6 +36,12 @@ export class LessonController {
   @Roles(Role.STUDENT)
   mine(@CurrentUser() user: RequestUser) {
     return this.lessonService.listForStudent(user.id);
+  }
+
+  @Get(":id/summary")
+  @Roles(Role.TEACHER)
+  summary(@CurrentUser() user: RequestUser, @Param("id", ParseUUIDPipe) id: string) {
+    return this.resultsService.lessonSummary(id, user.id);
   }
 
   @Get(":id")

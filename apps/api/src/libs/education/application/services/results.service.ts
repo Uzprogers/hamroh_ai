@@ -1,7 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { SubmissionOrmEntity } from "../../infrastructure/typeorm/submission.orm-entity";
+import { LessonOrmEntity } from "../../infrastructure/typeorm/lesson.orm-entity";
 import { CriterionResult, MistakeItem } from "../../infrastructure/typeorm/grade.orm-entity";
 import { GroupService } from "./group.service";
 
@@ -36,6 +37,8 @@ export class ResultsService {
   constructor(
     @InjectRepository(SubmissionOrmEntity)
     private readonly submissionRepo: Repository<SubmissionOrmEntity>,
+    @InjectRepository(LessonOrmEntity)
+    private readonly lessonRepo: Repository<LessonOrmEntity>,
     private readonly groupService: GroupService,
   ) {}
 
@@ -87,7 +90,17 @@ export class ResultsService {
 
   async groupSummary(groupId: string, teacherId: string): Promise<GroupSummaryRow[]> {
     await this.groupService.assertOwnership(groupId, teacherId);
+    return this.summary("l.group_id = :scopeId", groupId);
+  }
 
+  async lessonSummary(lessonId: string, teacherId: string): Promise<GroupSummaryRow[]> {
+    const lesson = await this.lessonRepo.findOne({ where: { id: lessonId } });
+    if (!lesson) throw new NotFoundException("LESSON_NOT_FOUND");
+    if (lesson.teacher_id !== teacherId) throw new ForbiddenException("NOT_LESSON_OWNER");
+    return this.summary("a.lesson_id = :scopeId", lessonId);
+  }
+
+  private async summary(condition: string, scopeId: string): Promise<GroupSummaryRow[]> {
     const rows = await this.submissionRepo
       .createQueryBuilder("s")
       .innerJoin("assignments", "a", "a.id = s.assignment_id")
@@ -105,7 +118,7 @@ export class ResultsService {
           WHERE m->>'severity' = 'MAJOR'
         )), 0)::int AS major_mistakes`,
       ])
-      .where("l.group_id = :groupId", { groupId })
+      .where(condition, { scopeId })
       .groupBy("u.id")
       .addGroupBy("u.first_name")
       .addGroupBy("u.last_name")
