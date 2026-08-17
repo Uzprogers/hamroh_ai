@@ -8,6 +8,7 @@ import {
   SIMLI_MAX_IDLE_SECONDS,
   SIMLI_MAX_SESSION_SECONDS,
   SIMLI_MODEL,
+  SIMLI_START_TIMEOUT_MS,
 } from "./avatar.const";
 import type { AvatarHandle, AvatarStatus } from "./avatar.types";
 
@@ -84,6 +85,7 @@ export const SimliAvatar = forwardRef<AvatarHandle, SimliAvatarProps>(function S
     };
 
     move("starting");
+    const guard = setTimeout(() => move("failed"), SIMLI_START_TIMEOUT_MS);
 
     void (async () => {
       try {
@@ -113,14 +115,17 @@ export const SimliAvatar = forwardRef<AvatarHandle, SimliAvatarProps>(function S
 
         clientRef.current = client;
         void audio.play().catch(() => undefined);
+        clearTimeout(guard);
         move("live");
       } catch {
+        clearTimeout(guard);
         move("failed");
       }
     })();
 
     return () => {
       alive = false;
+      clearTimeout(guard);
       void clientRef.current?.stop().catch(() => undefined);
       clientRef.current = null;
       setStatus("off");

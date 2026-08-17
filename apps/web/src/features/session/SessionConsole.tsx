@@ -29,7 +29,9 @@ export function SessionConsole({ session }: { session: SessionApi }) {
     CHECKING: t("session.checking"),
   }[session.state];
 
-  const showAvatar = session.avatarEnabled && session.avatarStatus !== "failed";
+  const showAvatar =
+    session.avatarEnabled && session.connected && session.avatarStatus !== "failed";
+  const avatarFailed = session.avatarEnabled && session.connected && session.avatarStatus === "failed";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -37,7 +39,7 @@ export function SessionConsole({ session }: { session: SessionApi }) {
         {showAvatar ? (
           <SimliAvatar
             ref={session.avatarRef}
-            active
+            active={session.connected}
             speaking={session.state === "SPEAKING"}
             onStatus={session.onAvatarStatus}
           />
@@ -66,6 +68,12 @@ export function SessionConsole({ session }: { session: SessionApi }) {
           />
           {stateLabel}
         </span>
+
+        {avatarFailed && !session.building && !session.checking && (
+          <div className="pointer-events-none absolute inset-x-4 bottom-4 rounded-2xl border border-edge bg-panel/70 px-4 py-2.5 backdrop-blur">
+            <p className="text-start text-xs text-muted">{t("session.avatar.failed")}</p>
+          </div>
+        )}
 
         {(session.building || session.checking) && (
           <div className="pointer-events-none absolute inset-x-4 bottom-4 rounded-2xl border border-azure/40 bg-ink/70 px-4 py-3 backdrop-blur">
