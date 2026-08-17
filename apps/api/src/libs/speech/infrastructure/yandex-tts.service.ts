@@ -4,8 +4,6 @@ import { DEFAULT_LOCALE, Locale } from "../../../core/i18n/locale.enum";
 import { SAMPLE_RATE, TTS_VOICE } from "../config/speech.config";
 import { YandexIamService } from "./yandex-iam.service";
 
-const TTS_V3_URL = "https://tts.api.cloud.yandex.net/tts/v3/utteranceSynthesis";
-
 export type AudioFormat = "ogg" | "pcm";
 
 @Injectable()
@@ -24,7 +22,7 @@ export class YandexTtsService {
         ? { rawAudio: { audioEncoding: "LINEAR16_PCM", sampleRateHertz: SAMPLE_RATE } }
         : { containerAudio: { containerAudioType: "OGG_OPUS" } };
 
-    const response = await fetch(TTS_V3_URL, {
+    const response = await fetch(env.yandex.ttsUrl, {
       method: "POST",
       headers: {
         authorization: `Bearer ${this.iam.getToken()}`,
