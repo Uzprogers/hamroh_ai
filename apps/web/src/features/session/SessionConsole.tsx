@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Orb } from "../../components/Orb";
+import { HologramAvatar } from "./HologramAvatar";
 import { SimliAvatar } from "./SimliAvatar";
 import { useAuth } from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
@@ -44,14 +44,7 @@ export function SessionConsole({ session }: { session: SessionApi }) {
             onStatus={session.onAvatarStatus}
           />
         ) : (
-          <Orb
-            level={session.level}
-            state={
-              session.state === "BUILDING" || session.state === "CHECKING"
-                ? "THINKING"
-                : session.state
-            }
-          />
+          <HologramAvatar level={session.level} state={session.state} />
         )}
 
         <span className="chip absolute left-4 top-4 backdrop-blur">

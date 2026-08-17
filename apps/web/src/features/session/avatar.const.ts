@@ -9,3 +9,10 @@ export const SIMLI_MODEL = "fasttalk" as const;
 export const SIMLI_FRAME_BYTES = 6000;
 export const SIMLI_FLUSH_MS = 180;
 export const SIMLI_START_TIMEOUT_MS = 15000;
+
+export const HOLO_PARTICLES = 620;
+export const HOLO_SPIN = 0.5;
+export const HOLO_LEVEL_GAIN = 2.8;
+export const HOLO_BUSY_LEVEL = 0.32;
+export const HOLO_IDLE_LEVEL = 0.1;
+export const HOLO_SMOOTHING = 0.18;
