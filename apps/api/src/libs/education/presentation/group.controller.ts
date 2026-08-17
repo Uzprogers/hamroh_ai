@@ -14,6 +14,7 @@ import { ResultsService } from "../application/services/results.service";
 import { CreateGroupDto } from "../application/dto/create-group.dto";
 import { AddMemberDto } from "../application/dto/add-member.dto";
 import { JoinGroupDto } from "../application/dto/join-group.dto";
+import { JoinClassDto } from "../application/dto/join-class.dto";
 import { CurrentUser } from "../../../core/decorators/current-user.decorator";
 import { Roles, RolesGuard } from "../../../core/decorators/roles.decorator";
 import { Role } from "../../identity/config/identity.enums";
@@ -45,10 +46,21 @@ export class GroupController {
     return this.groupService.listForStudent(user.id);
   }
 
+  @Get("schools")
+  schools() {
+    return this.groupService.schools();
+  }
+
   @Post("join")
   @Roles(Role.STUDENT)
   join(@CurrentUser() user: RequestUser, @Body() dto: JoinGroupDto) {
     return this.groupService.joinByCode(user.id, dto.code);
+  }
+
+  @Post("join-class")
+  @Roles(Role.STUDENT)
+  joinClass(@CurrentUser() user: RequestUser, @Body() dto: JoinClassDto) {
+    return this.groupService.joinClass(user.id, dto);
   }
 
   @Delete(":id/members/:studentId")

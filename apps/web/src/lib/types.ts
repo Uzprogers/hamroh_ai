@@ -97,6 +97,24 @@ export interface Group {
 
 export type MemberSource = "TEACHER" | "PIN" | "CODE" | "SCHOOL";
 
+export interface SchoolClass {
+  name: string;
+  grade_level: number;
+  subjects: string[];
+  student_count: number;
+}
+
+export interface School {
+  name: string;
+  institution_type: InstitutionType;
+  classes: SchoolClass[];
+}
+
+export interface ClassJoin {
+  school: string;
+  class_name: string;
+}
+
 export interface StudentGroup {
   id: string;
   name: string;

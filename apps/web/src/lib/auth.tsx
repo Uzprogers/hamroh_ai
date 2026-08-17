@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api } from "./api";
-import type { AuthResult, User } from "./types";
+import type { AuthResult, ClassJoin, User } from "./types";
 import { useI18n } from "../i18n/i18n";
 import type { Locale } from "../i18n/dictionary";
 
@@ -12,7 +12,7 @@ interface AuthValue {
   ready: boolean;
   loginWithGoogle: (googleToken: string) => Promise<User>;
   accept: (result: AuthResult) => User;
-  completeProfile: (payload: Record<string, unknown>) => Promise<User>;
+  completeProfile: (payload: Record<string, unknown>, join?: ClassJoin) => Promise<User>;
   refresh: () => Promise<void>;
   logout: () => void;
 }
@@ -57,8 +57,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const completeProfile = useCallback(
-    async (payload: Record<string, unknown>) =>
-      accept(await api.post<AuthResult>("/auth/profile", { ...payload, locale }, token)),
+    async (payload: Record<string, unknown>, join?: ClassJoin) => {
+      const result = await api.post<AuthResult>("/auth/profile", { ...payload, locale }, token);
+      if (join) await api.post("/groups/join-class", join, result.token);
+      return accept(result);
+    },
     [accept, locale, token],
   );
 

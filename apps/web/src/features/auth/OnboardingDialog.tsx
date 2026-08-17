@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
+import { ClassPicker } from "./ClassPicker";
 import { TUTOR_COURSES } from "./onboarding.courses";
 import { INSTITUTION_SUGGESTIONS } from "./institutions.data";
 import { Avatar } from "../../components/Avatar";
@@ -7,11 +8,11 @@ import { Choice } from "../../components/Choice";
 import { Combobox } from "../../components/Combobox";
 import { StepIcon } from "../../components/StepIcon";
 import { useAuth } from "../../lib/auth";
-import { ApiError } from "../../lib/api";
+import { api, ApiError } from "../../lib/api";
 import { formatPhone } from "../../lib/phone";
 import { useI18n, useTranslateError } from "../../i18n/i18n";
 import type { TranslationKey } from "../../i18n/dictionary";
-import type { InstitutionType, Role, User } from "../../lib/types";
+import type { InstitutionType, Role, School, SchoolClass, User } from "../../lib/types";
 
 const LEVEL_LABEL: Record<InstitutionType, TranslationKey> = {
   SCHOOL: "onboarding.level.school",
@@ -60,11 +61,15 @@ function RoleCard({
 export function OnboardingDialog({ user }: { user: User }) {
   const { t } = useI18n();
   const translateError = useTranslateError();
-  const { completeProfile, logout } = useAuth();
+  const { completeProfile, logout, token } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [role, setRole] = useState<Role | null>(null);
   const [institutionType, setInstitutionType] = useState<InstitutionType>("SCHOOL");
+  const [schools, setSchools] = useState<School[]>([]);
+  const [school, setSchool] = useState<School | null>(null);
+  const [klass, setKlass] = useState<SchoolClass | null>(null);
+  const [manual, setManual] = useState(false);
   const [form, setForm] = useState({
     first_name: user.first_name ?? "",
     last_name: user.last_name ?? "",
@@ -77,6 +82,14 @@ export function OnboardingDialog({ user }: { user: User }) {
   const [busy, setBusy] = useState(false);
 
   const phoneRequired = !user.email;
+  const catalog = role === "STUDENT" && institutionType === "SCHOOL" && schools.length > 0 && !manual;
+
+  useEffect(() => {
+    api
+      .get<School[]>("/groups/schools", token)
+      .then(setSchools)
+      .catch(() => setSchools([]));
+  }, [token]);
 
   const set = (key: keyof typeof form, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -88,7 +101,15 @@ export function OnboardingDialog({ user }: { user: User }) {
 
   const pickInstitutionType = (next: InstitutionType) => {
     setInstitutionType(next);
+    setSchool(null);
+    setKlass(null);
     setForm((prev) => ({ ...prev, institution_name: "", grade_level: "" }));
+  };
+
+  const pickClass = (nextSchool: School, nextClass: SchoolClass | null) => {
+    setSchool(nextSchool);
+    setKlass(nextClass);
+    setForm((prev) => ({ ...prev, institution_name: nextSchool.name }));
   };
 
   const submit = async (event: FormEvent) => {
@@ -102,19 +123,27 @@ export function OnboardingDialog({ user }: { user: User }) {
       return;
     }
 
+    if (catalog && (!school || !klass)) {
+      setError(t("onboarding.class.required"));
+      return;
+    }
+
     setBusy(true);
     setError(null);
     try {
-      await completeProfile({
-        role,
-        first_name: form.first_name.trim(),
-        last_name: form.last_name.trim() || undefined,
-        institution_type: institutionType,
-        institution_name: form.institution_name.trim(),
-        grade_level: role === "STUDENT" ? form.grade_level.trim() || undefined : undefined,
-        subject: role === "TEACHER" ? form.subject.trim() || undefined : undefined,
-        phone: valid && phone !== user.phone ? phone : undefined,
-      });
+      await completeProfile(
+        {
+          role,
+          first_name: form.first_name.trim(),
+          last_name: form.last_name.trim() || undefined,
+          institution_type: institutionType,
+          institution_name: form.institution_name.trim(),
+          grade_level: role === "STUDENT" ? form.grade_level.trim() || undefined : undefined,
+          subject: role === "TEACHER" ? form.subject.trim() || undefined : undefined,
+          phone: valid && phone !== user.phone ? phone : undefined,
+        },
+        catalog && school && klass ? { school: school.name, class_name: klass.name } : undefined,
+      );
     } catch (err) {
       setError(translateError(err instanceof ApiError ? err.code : "network"));
     } finally {
@@ -217,18 +246,44 @@ export function OnboardingDialog({ user }: { user: User }) {
               />
             </div>
 
-            <div>
-              <label className="label" htmlFor="ob_institution">
-                {t(INSTITUTION_LABEL[institutionType])}
-              </label>
-              <Combobox
-                id="ob_institution"
-                value={form.institution_name}
-                options={INSTITUTION_SUGGESTIONS[institutionType]}
-                placeholder={t("onboarding.institution.hint")}
-                onChange={(next) => set("institution_name", next)}
-              />
-            </div>
+            {catalog ? (
+              <div>
+                <span className="label">{t("onboarding.class.title")}</span>
+                <p className="mb-2.5 text-xs leading-relaxed text-muted">
+                  {t("onboarding.class.hint")}
+                </p>
+                <ClassPicker schools={schools} school={school} klass={klass} onPick={pickClass} />
+                <button
+                  type="button"
+                  onClick={() => setManual(true)}
+                  className="mt-2.5 text-xs font-semibold text-muted transition hover:text-teal"
+                >
+                  {t("onboarding.class.manual")}
+                </button>
+              </div>
+            ) : (
+              <div>
+                <label className="label" htmlFor="ob_institution">
+                  {t(INSTITUTION_LABEL[institutionType])}
+                </label>
+                <Combobox
+                  id="ob_institution"
+                  value={form.institution_name}
+                  options={INSTITUTION_SUGGESTIONS[institutionType]}
+                  placeholder={t("onboarding.institution.hint")}
+                  onChange={(next) => set("institution_name", next)}
+                />
+                {manual && role === "STUDENT" && institutionType === "SCHOOL" && (
+                  <button
+                    type="button"
+                    onClick={() => setManual(false)}
+                    className="mt-2.5 text-xs font-semibold text-muted transition hover:text-teal"
+                  >
+                    {t("onboarding.class.catalog")}
+                  </button>
+                )}
+              </div>
+            )}
 
             {role === "STUDENT" && institutionType === "TUTORING" ? (
               <div>
@@ -269,7 +324,7 @@ export function OnboardingDialog({ user }: { user: User }) {
                     onChange={(event) => set("subject", event.target.value)}
                   />
                 </div>
-              ) : institutionType === "TUTORING" ? null : (
+              ) : institutionType === "TUTORING" || catalog ? null : (
                 <div>
                   <label className="label" htmlFor="ob_grade">
                     {t(LEVEL_LABEL[institutionType])}

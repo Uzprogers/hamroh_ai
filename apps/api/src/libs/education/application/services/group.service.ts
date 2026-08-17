@@ -10,7 +10,9 @@ import { GroupOrmEntity } from "../../infrastructure/typeorm/group.orm-entity";
 import { GroupMemberOrmEntity } from "../../infrastructure/typeorm/group-member.orm-entity";
 import { UserOrmEntity } from "../../../identity/infrastructure/typeorm/user.orm-entity";
 import { CreateGroupDto } from "../dto/create-group.dto";
-import { Role } from "../../../identity/config/identity.enums";
+import { JoinClassDto } from "../dto/join-class.dto";
+import { InstitutionType, Role } from "../../../identity/config/identity.enums";
+import { gradeLabel } from "../../config/grade-label";
 import {
   GROUP_CODE_ALPHABET,
   GROUP_CODE_ATTEMPTS,
@@ -18,6 +20,16 @@ import {
   MemberSource,
 } from "../../config/education.enums";
 import { GroupMemberRow, StudentGroupRow } from "../types/group-join.types";
+import { SchoolRow } from "../types/school-catalog.types";
+
+interface SchoolClassRaw {
+  school: string;
+  institution_type: InstitutionType;
+  name: string;
+  grade_level: number;
+  subjects: string[];
+  student_count: string;
+}
 
 interface StudentGroupRaw {
   id: string;
@@ -120,7 +132,10 @@ export class GroupService {
     const student = await this.userRepo.findOne({ where: { phone, role: Role.STUDENT } });
     if (!student) throw new NotFoundException("STUDENT_NOT_FOUND");
 
-    await this.link(groupId, student.id, MemberSource.TEACHER);
+    const group = await this.groupRepo.findOne({ where: { id: groupId } });
+    if (!group) throw new NotFoundException("GROUP_NOT_FOUND");
+
+    await this.link(group, student.id, MemberSource.TEACHER);
     return student;
   }
 
@@ -139,7 +154,7 @@ export class GroupService {
 
     const student = await this.requireStudent(studentId);
     this.assertGrade(group, student);
-    await this.link(group.id, studentId, source);
+    await this.link(group, studentId, source);
     await this.transferSchool(studentId, group);
     return group;
   }
@@ -150,6 +165,70 @@ export class GroupService {
     if (!group) throw new NotFoundException("GROUP_CODE_NOT_FOUND");
 
     return this.joinGroup(studentId, group.id, MemberSource.CODE);
+  }
+
+  async schools(): Promise<SchoolRow[]> {
+    const rows = await this.groupRepo.query<SchoolClassRaw[]>(
+      `SELECT btrim(t.institution_name) AS school,
+              g.institution_type AS institution_type,
+              g.name AS name,
+              g.grade_level AS grade_level,
+              array_agg(DISTINCT g.subject) AS subjects,
+              COUNT(DISTINCT m.student_id) AS student_count
+       FROM groups g
+       JOIN users t ON t.id = g.teacher_id
+       LEFT JOIN group_members m ON m.group_id = g.id
+       WHERE t.institution_name IS NOT NULL
+         AND btrim(t.institution_name) <> ''
+         AND g.grade_level IS NOT NULL
+       GROUP BY 1, 2, 3, 4
+       ORDER BY 1 ASC, g.grade_level ASC, g.name ASC`,
+    );
+
+    const schools = new Map<string, SchoolRow>();
+    for (const row of rows) {
+      const school = schools.get(row.school) ?? {
+        name: row.school,
+        institution_type: row.institution_type,
+        classes: [],
+      };
+      school.classes.push({
+        name: row.name,
+        grade_level: Number(row.grade_level),
+        subjects: row.subjects,
+        student_count: Number(row.student_count),
+      });
+      schools.set(row.school, school);
+    }
+
+    return [...schools.values()];
+  }
+
+  async joinClass(studentId: string, dto: JoinClassDto): Promise<GroupOrmEntity[]> {
+    const student = await this.requireStudent(studentId);
+
+    const groups = await this.groupRepo
+      .createQueryBuilder("g")
+      .innerJoin(UserOrmEntity, "t", "t.id = g.teacher_id")
+      .where("lower(btrim(t.institution_name)) = lower(btrim(:school))", { school: dto.school })
+      .andWhere("lower(btrim(g.name)) = lower(btrim(:name))", { name: dto.class_name })
+      .andWhere("g.grade_level IS NOT NULL")
+      .orderBy("g.subject", "ASC")
+      .getMany();
+
+    if (!groups.length) throw new NotFoundException("CLASS_NOT_FOUND");
+
+    await this.userRepo.update(
+      { id: studentId },
+      { grade_level: gradeLabel(Number(groups[0].grade_level), student.locale) },
+    );
+
+    for (const group of groups) {
+      await this.link(group, studentId, MemberSource.SCHOOL);
+      await this.transferSchool(studentId, group);
+    }
+
+    return groups;
   }
 
   async schoolOf(teacherId: string): Promise<string> {
@@ -181,21 +260,27 @@ export class GroupService {
     if (!member) throw new ForbiddenException("NOT_GROUP_MEMBER");
   }
 
-  private async link(groupId: string, studentId: string, source: MemberSource): Promise<void> {
+  private async link(
+    group: GroupOrmEntity,
+    studentId: string,
+    source: MemberSource,
+  ): Promise<void> {
     await this.memberRepo.manager.transaction(async (manager) => {
-      await manager
-        .createQueryBuilder()
-        .delete()
-        .from(GroupMemberOrmEntity)
-        .where("student_id = :studentId", { studentId })
-        .andWhere("group_id != :groupId", { groupId })
-        .execute();
+      await manager.query(
+        `DELETE FROM group_members m
+         USING groups g
+         WHERE g.id = m.group_id
+           AND m.student_id = $1
+           AND m.group_id <> $2
+           AND lower(btrim(g.subject)) = lower(btrim($3))`,
+        [studentId, group.id, group.subject],
+      );
 
       await manager
         .createQueryBuilder()
         .insert()
         .into(GroupMemberOrmEntity)
-        .values({ group_id: groupId, student_id: studentId, source })
+        .values({ group_id: group.id, student_id: studentId, source })
         .orIgnore()
         .execute();
     });
