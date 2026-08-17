@@ -28,28 +28,36 @@ async function handle<T>(response: Response): Promise<T> {
   throw new ApiError(code, response.status);
 }
 
+/** GET tanasiz ketadi, qolganlari JSON tanasi bilan — barcha so'rovlar uchun yagona nuqta. */
+async function request<T>(
+  method: "GET" | "POST" | "PATCH",
+  path: string,
+  token: string | null,
+  body?: unknown,
+): Promise<T> {
+  const init: RequestInit =
+    method === "GET"
+      ? { headers: authHeaders(token) }
+      : {
+          method,
+          headers: { "content-type": "application/json", ...authHeaders(token) },
+          body: JSON.stringify(body),
+        };
+
+  return handle<T>(await fetch(`${BASE_URL}/api${path}`, init));
+}
+
 export const api = {
-  async get<T>(path: string, token: string | null): Promise<T> {
-    const response = await fetch(`${BASE_URL}/api${path}`, { headers: authHeaders(token) });
-    return handle<T>(response);
+  get<T>(path: string, token: string | null): Promise<T> {
+    return request<T>("GET", path, token);
   },
 
-  async post<T>(path: string, body: unknown, token: string | null): Promise<T> {
-    const response = await fetch(`${BASE_URL}/api${path}`, {
-      method: "POST",
-      headers: { "content-type": "application/json", ...authHeaders(token) },
-      body: JSON.stringify(body),
-    });
-    return handle<T>(response);
+  post<T>(path: string, body: unknown, token: string | null): Promise<T> {
+    return request<T>("POST", path, token, body);
   },
 
-  async patch<T>(path: string, body: unknown, token: string | null): Promise<T> {
-    const response = await fetch(`${BASE_URL}/api${path}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json", ...authHeaders(token) },
-      body: JSON.stringify(body),
-    });
-    return handle<T>(response);
+  patch<T>(path: string, body: unknown, token: string | null): Promise<T> {
+    return request<T>("PATCH", path, token, body);
   },
 };
 
