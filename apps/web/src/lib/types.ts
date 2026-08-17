@@ -204,7 +204,8 @@ export type PanelCardType =
   | "MISTAKES"
   | "EXERCISE"
   | "SPEAKING_REVIEW"
-  | "STUDY_PLAN";
+  | "STUDY_PLAN"
+  | "TOPIC_RECAP";
 
 export interface PanelCard {
   type: PanelCardType;
@@ -232,6 +233,13 @@ export interface SpeakingPayload {
   corrected: string;
   score: number;
   segments: { fragment: string; correct: boolean; correction: string; note: string }[];
+}
+
+export interface TopicRecapPayload {
+  title: string;
+  summary: string;
+  steps: { title: string; text: string; example: string }[];
+  check: string;
 }
 
 export interface StudyPlanPayload {

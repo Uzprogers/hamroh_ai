@@ -5,3 +5,6 @@ export const SIMLI_FACE_ID =
 export const SIMLI_MAX_SESSION_SECONDS = 1800;
 export const SIMLI_MAX_IDLE_SECONDS = 600;
 export const SIMLI_MODEL = "fasttalk" as const;
+
+export const SIMLI_FRAME_BYTES = 6000;
+export const SIMLI_FLUSH_MS = 180;

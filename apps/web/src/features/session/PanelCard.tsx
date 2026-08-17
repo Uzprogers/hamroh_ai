@@ -6,6 +6,7 @@ import type {
   ResultsPayload,
   SpeakingPayload,
   StudyPlanPayload,
+  TopicRecapPayload,
 } from "../../lib/types";
 import type { TranslationKey } from "../../i18n/dictionary";
 
@@ -22,6 +23,7 @@ const TOOL_TO_TYPE: Record<string, PanelCardType> = {
   create_exercise: "EXERCISE",
   review_speaking: "SPEAKING_REVIEW",
   study_plan: "STUDY_PLAN",
+  explain_topic: "TOPIC_RECAP",
 };
 
 export function toolCardType(tool: string): PanelCardType | null {
@@ -71,6 +73,8 @@ function renderBody(
       return <Speaking payload={payload as SpeakingPayload} t={t} />;
     case "STUDY_PLAN":
       return <StudyPlan payload={payload as StudyPlanPayload} t={t} />;
+    case "TOPIC_RECAP":
+      return <TopicRecap payload={payload as TopicRecapPayload} t={t} />;
     default:
       return null;
   }
@@ -180,6 +184,51 @@ function Speaking({ payload, t }: { payload: SpeakingPayload; t: (key: Translati
         </div>
         <span className="font-mono text-xs">{payload.score ?? 0}%</span>
       </div>
+    </div>
+  );
+}
+
+function TopicRecap({
+  payload,
+  t,
+}: {
+  payload: TopicRecapPayload;
+  t: (key: TranslationKey) => string;
+}) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="text-start font-display text-base font-extrabold">{payload.title}</div>
+        <p className="mt-1 text-start text-sm text-muted">{payload.summary}</p>
+      </div>
+
+      <ol className="space-y-2.5">
+        {payload.steps?.map((step, index) => (
+          <li key={index} className="rounded-xl border border-edge/60 px-3 py-2.5">
+            <div className="flex gap-3">
+              <span className="font-mono text-xs text-teal">0{index + 1}</span>
+              <div className="min-w-0">
+                <div className="text-start text-sm font-semibold">{step.title}</div>
+                <p className="mt-1 text-start text-sm text-muted">{step.text}</p>
+                {step.example && (
+                  <p className="mt-1.5 rounded-lg bg-teal/10 px-2.5 py-1.5 text-start text-sm text-teal">
+                    {step.example}
+                  </p>
+                )}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      {payload.check && (
+        <div className="rounded-xl border border-azure/35 bg-azure/5 px-3 py-2.5">
+          <div className="text-start text-xs font-semibold uppercase tracking-wide text-muted">
+            {t("card.check")}
+          </div>
+          <p className="mt-1 text-start text-sm">{payload.check}</p>
+        </div>
+      )}
     </div>
   );
 }

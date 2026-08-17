@@ -96,6 +96,7 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
           toolPending: (callId, tool) => client.emit("panel:pending", { call_id: callId, tool }),
           toolReady: (callId, tool, card) =>
             client.emit("panel:ready", { call_id: callId, tool, card }),
+          exerciseResult: (result) => client.emit("exercise:result", result),
           failure: (message) => client.emit("session:error", { message }),
           persist: (sender: MessageSender, text, toolName, toolResult) =>
             void this.sessionService.record(session.id, sender, text, toolName, toolResult),
@@ -152,6 +153,19 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
   ): Promise<void> {
     const text = String(body?.text ?? "").slice(0, 2000);
     await this.live.get(client.id)?.pipeline.handleText(text);
+  }
+
+  @SubscribeMessage("exercise:answer")
+  async exerciseAnswer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { call_id: string; answers: string[] },
+  ): Promise<void> {
+    const callId = String(body?.call_id ?? "");
+    const answers = Array.isArray(body?.answers)
+      ? body.answers.map((answer) => String(answer ?? "").slice(0, 1000))
+      : [];
+    if (!callId) return;
+    await this.live.get(client.id)?.pipeline.submitExercise(callId, answers);
   }
 
   @SubscribeMessage("session:end")

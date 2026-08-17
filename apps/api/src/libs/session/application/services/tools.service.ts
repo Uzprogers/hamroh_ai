@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { LlmService, ToolDefinition } from "../../../agent/infrastructure/llm.service";
 import { ResultsService } from "../../../education/application/services/results.service";
 import { PanelCardType } from "../../config/session.enums";
+import { ExercisePayload, ExerciseVerdict } from "../types/exercise.types";
 import { Locale } from "../../../../core/i18n/locale.enum";
 import { LANGUAGE_INSTRUCTION } from "../../../../core/i18n/prompt-language";
 
@@ -13,6 +14,8 @@ export interface ToolOutcome {
 export interface ToolContext {
   studentId: string;
   locale: Locale;
+  subject: string;
+  topic: string;
 }
 
 export const TOOL_DEFINITIONS: ToolDefinition[] = [
@@ -59,6 +62,23 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: "explain_topic",
+    description:
+      "Teach the topic again from the start, in small steps with examples. Call it when the student's drill went badly and they agreed to hear it again.",
+    parameters: {
+      type: "object",
+      properties: {
+        topic: { type: "string", description: "The topic to teach again" },
+        weak_points: {
+          type: "array",
+          items: { type: "string" },
+          description: "What the student keeps getting wrong",
+        },
+      },
+      required: ["topic"],
+    },
+  },
+  {
     name: "study_plan",
     description: "Draft a short day-by-day study plan built from the student's actual weak points.",
     parameters: {
@@ -95,6 +115,12 @@ export class ToolsService {
         return this.getMistakes(ctx);
       case "create_exercise":
         return this.createExercise(ctx, String(args.topic ?? ""), String(args.difficulty ?? "medium"));
+      case "explain_topic":
+        return this.explainTopic(
+          ctx,
+          String(args.topic ?? ""),
+          Array.isArray(args.weak_points) ? args.weak_points.map(String) : [],
+        );
       case "review_speaking":
         return this.reviewSpeaking(ctx, String(args.text ?? ""));
       case "study_plan":
@@ -172,14 +198,76 @@ export class ToolsService {
       `You design short drills for one student. Return JSON only:
 {"title": "...", "instruction": "one sentence", "items": [{"prompt": "...", "answer": "...", "hint": "..."}]}
 Exactly 4 items, each solvable in under a minute.
+When the subject is a foreign language, the student must answer IN THAT LANGUAGE: write the task in
+their speaking language, say inside the prompt text which language the answer must be in, and write
+the expected answer in the target language.
 ${LANGUAGE_INSTRUCTION[ctx.locale]}`,
-      `Topic: ${topic}\nDifficulty: ${difficulty}`,
+      `Subject: ${ctx.subject || "not set"}\nLesson: ${ctx.topic || topic}\nDrill topic: ${topic}\nDifficulty: ${difficulty}`,
     );
 
     return {
       summary: JSON.stringify({ title: generated.title, item_count: generated.items?.length ?? 0 }),
       card: { type: PanelCardType.EXERCISE, payload: generated },
     };
+  }
+
+  private async explainTopic(
+    ctx: ToolContext,
+    topic: string,
+    weakPoints: string[],
+  ): Promise<ToolOutcome> {
+    const generated = await this.ai.json<{
+      title: string;
+      summary: string;
+      steps: { title: string; text: string; example: string }[];
+      check: string;
+    }>(
+      `You re-teach one topic to a student who just failed a drill on it. Return JSON only:
+{"title": "...", "summary": "two sentences", "steps": [{"title": "...", "text": "...", "example": "..."}], "check": "one question that proves they got it"}
+Exactly 3 steps, each with a concrete example the student can copy.
+${LANGUAGE_INSTRUCTION[ctx.locale]}`,
+      `Topic: ${topic}\nKeeps getting wrong: ${weakPoints.join(", ") || "unknown"}`,
+    );
+
+    return {
+      summary: JSON.stringify({ title: generated.title, step_count: generated.steps?.length ?? 0 }),
+      card: { type: PanelCardType.TOPIC_RECAP, payload: generated },
+    };
+  }
+
+  async gradeExercise(
+    exercise: ExercisePayload,
+    answers: string[],
+    locale: Locale,
+  ): Promise<ExerciseVerdict[]> {
+    const graded = await this.ai.json<{
+      items: { index: number; correct: boolean; comment: string }[];
+    }>(
+      `You mark a student's answers to a short drill. Return JSON only:
+{"items": [{"index": 0, "correct": true, "comment": "one short sentence"}]}
+One entry per task, in order. Accept any wording that carries the same meaning as the expected
+answer; mark wrong only when the content is wrong. The comment says what was wrong and what the
+correct form is, never praise.
+${LANGUAGE_INSTRUCTION[locale]}`,
+      exercise.items
+        .map(
+          (item, index) =>
+            `${index}. Task: ${item.prompt}\n   Expected: ${item.answer}\n   Student: ${answers[index]?.trim() || "(no answer)"}`,
+        )
+        .join("\n"),
+    );
+
+    const byIndex = new Map((graded.items ?? []).map((item) => [Number(item.index), item]));
+
+    return exercise.items.map((item, index) => {
+      const verdict = byIndex.get(index);
+      return {
+        index,
+        correct: Boolean(verdict?.correct) && Boolean(answers[index]?.trim()),
+        expected: item.answer,
+        comment: verdict?.comment ?? "",
+      };
+    });
   }
 
   private async reviewSpeaking(ctx: ToolContext, text: string): Promise<ToolOutcome> {

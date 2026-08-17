@@ -1,0 +1,1 @@
+export const EXERCISE_PASS_PERCENT = 50;

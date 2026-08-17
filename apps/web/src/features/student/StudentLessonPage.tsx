@@ -1,158 +1,145 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { NavIcon } from "../../components/NavIcon";
+import { LessonAnalysis } from "./LessonAnalysis";
+import { TeacherMaterial } from "./TeacherMaterial";
+import { LiveWorkspace } from "../session/LiveWorkspace";
+import { SessionConsole } from "../session/SessionConsole";
+import { useSession } from "../session/useSession";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
-import { MathText } from "../../components/MathText";
-import { NavIcon } from "../../components/NavIcon";
 import { useI18n } from "../../i18n/i18n";
 import type { TranslationKey } from "../../i18n/dictionary";
-import type { Assignment, Grade, Lesson } from "../../lib/types";
+import type { Assignment, Lesson, StudentGroup, StudentResult } from "../../lib/types";
+
+type StudioTab = "material" | "practice" | "analysis";
+
+const TABS: { key: StudioTab; label: TranslationKey; icon: "lessons" | "spark" | "stats" }[] = [
+  { key: "material", label: "studio.tab.material", icon: "lessons" },
+  { key: "practice", label: "studio.tab.practice", icon: "spark" },
+  { key: "analysis", label: "studio.tab.analysis", icon: "stats" },
+];
 
 export function StudentLessonPage() {
   const { id } = useParams<{ id: string }>();
   const { token } = useAuth();
   const { t } = useI18n();
+  const session = useSession({ lesson_id: id });
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [grades, setGrades] = useState<Record<string, Grade>>({});
-  const [checking, setChecking] = useState<string | null>(null);
+  const [group, setGroup] = useState<StudentGroup | null>(null);
+  const [results, setResults] = useState<StudentResult[]>([]);
+  const [tab, setTab] = useState<StudioTab>("material");
+
+  const loadResults = useCallback(
+    (ids: string[]) => {
+      if (!ids.length) return;
+      api
+        .get<StudentResult[]>("/results/mine", token)
+        .then((rows) => setResults(rows.filter((row) => ids.includes(row.assignment_id))))
+        .catch(() => undefined);
+    },
+    [token],
+  );
 
   useEffect(() => {
     if (!id) return;
-    api
-      .get<{ lesson: Lesson; assignments: Assignment[] }>(`/lessons/${id}`, token)
-      .then(({ lesson: nextLesson, assignments: nextAssignments }) => {
-        setLesson(nextLesson);
-        setAssignments(nextAssignments);
+    void Promise.all([
+      api.get<{ lesson: Lesson; assignments: Assignment[] }>(`/lessons/${id}`, token),
+      api.get<StudentGroup[]>("/groups/mine", token).catch(() => [] as StudentGroup[]),
+    ])
+      .then(([detail, groups]) => {
+        setLesson(detail.lesson);
+        setAssignments(detail.assignments);
+        setGroup(groups.find((row) => row.id === detail.lesson.group_id) ?? null);
+        loadResults(detail.assignments.map((assignment) => assignment.id));
       })
       .catch(() => undefined);
-  }, [id, token]);
+  }, [id, token, loadResults]);
 
-  const submit = async (assignment: Assignment) => {
-    const text = (answers[assignment.id] ?? "").trim();
-    if (!text) return;
-    setChecking(assignment.id);
-    try {
-      const { grade } = await api.post<{ grade: Grade }>(
-        "/submissions",
-        { assignment_id: assignment.id, text },
-        token,
-      );
-      setGrades((prev) => ({ ...prev, [assignment.id]: grade }));
-    } finally {
-      setChecking(null);
-    }
-  };
+  const refresh = useCallback(
+    () => loadResults(assignments.map((assignment) => assignment.id)),
+    [assignments, loadResults],
+  );
+
+  const cards = session.panel.length;
+  useEffect(() => {
+    if (cards > 0) setTab("practice");
+  }, [cards]);
 
   if (!lesson) return <div className="skeleton h-64" />;
 
+  const teacher = session.focus?.teacher_name || group?.teacher_name || "";
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 py-6">
       <Link to="/" className="chip">
         ← {t("student.title")}
       </Link>
 
-      <section className="surface animate-rise relative overflow-hidden p-7">
+      <section className="surface animate-rise relative overflow-hidden p-6 sm:p-7">
         <span className="pointer-events-none absolute -right-24 -top-28 h-64 w-64 rounded-full bg-gradient-to-br from-teal/25 to-azure/20 blur-3xl" />
 
-        <h1 className="relative text-start font-display text-3xl font-extrabold">{lesson.topic}</h1>
-        <p className="relative mt-2 text-start text-muted">{lesson.objective}</p>
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-start font-display text-2xl font-extrabold sm:text-3xl">
+              {lesson.topic}
+            </h1>
+            <p className="mt-2 max-w-2xl text-start text-muted">{lesson.objective}</p>
 
-        <Link to={`/session?lesson=${lesson.id}`} className="btn-primary relative mt-6">
-          <NavIcon name="spark" className="h-4 w-4" />
-          {t("session.discuss.lesson")}
-        </Link>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {teacher && (
+                <span className="chip">
+                  <NavIcon name="user" className="h-3.5 w-3.5" />
+                  {teacher}
+                </span>
+              )}
+              {group && <span className="chip">{group.name}</span>}
+              {group && <span className="chip">{group.subject}</span>}
+            </div>
+          </div>
+
+          {!session.connected && (
+            <button type="button" className="btn-primary" onClick={session.connect}>
+              <NavIcon name="spark" className="h-4 w-4" />
+              {t("studio.start")}
+            </button>
+          )}
+        </div>
       </section>
 
-      <div className="space-y-5">
-        {assignments.map((assignment) => {
-          const grade = grades[assignment.id];
-          return (
-            <section key={assignment.id} className="surface p-6">
-              <div className="flex items-center gap-2">
-                <span className="chip border-azure/40 text-azure">
-                  {t(`assignment.type.${assignment.type}` as TranslationKey)}
-                </span>
-                <span className="text-xs text-muted">
-                  {assignment.max_score} {t("student.score")}
-                </span>
-              </div>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:items-start">
+        <aside className="surface sticky top-4 flex h-[620px] flex-col overflow-hidden p-0 lg:h-[calc(100vh-7rem)]">
+          <SessionConsole session={session} />
+        </aside>
 
-              <p className="mt-3"><MathText text={assignment.question} /></p>
-
-              <textarea
-                className="field mt-4 min-h-[120px] resize-none"
-                placeholder={t("student.answer")}
-                value={answers[assignment.id] ?? ""}
-                onChange={(e) => setAnswers((prev) => ({ ...prev, [assignment.id]: e.target.value }))}
-              />
-
+        <div className="min-w-0 space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {TABS.map((item) => (
               <button
+                key={item.key}
                 type="button"
-                className="btn-primary mt-4"
-                onClick={() => submit(assignment)}
-                disabled={checking === assignment.id}
+                onClick={() => setTab(item.key)}
+                className={`chip transition ${
+                  tab === item.key ? "border-teal/60 bg-teal/10 text-teal" : "hover:border-teal/40"
+                }`}
               >
-                {checking === assignment.id ? t("student.checking") : t("student.submit")}
+                <NavIcon name={item.icon} className="h-3.5 w-3.5" />
+                {t(item.label)}
+                {item.key === "practice" && session.panel.length > 0 && (
+                  <span className="font-mono text-[10px]">{session.panel.length}</span>
+                )}
               </button>
+            ))}
+          </div>
 
-              {checking === assignment.id && <div className="skeleton mt-5 h-24" />}
-
-              {grade && (
-                <div className="mt-5 animate-rise rounded-xl border border-teal/30 bg-teal/5 p-5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold">{t("student.feedback")}</span>
-                    <span className="font-mono text-lg text-teal">
-                      {grade.score} / {grade.max_score}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm text-muted">{grade.feedback}</p>
-
-                  {grade.mistakes.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-muted">
-                        {t("student.mistakes")}
-                      </div>
-                      {grade.mistakes.map((mistake, index) => (
-                        <div key={index} className="flex flex-wrap items-center gap-2 text-sm">
-                          <span className="rounded bg-coral/15 px-2 py-0.5 text-coral line-through">
-                            {mistake.fragment}
-                          </span>
-                          <span className="text-muted">→</span>
-                          <span className="rounded bg-teal/15 px-2 py-0.5 text-teal">
-                            {mistake.correction}
-                          </span>
-                          <span className="text-xs text-muted">{mistake.explanation}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {grade.criteria_results.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      {grade.criteria_results.map((criterion) => (
-                        <div key={criterion.name} className="flex items-center gap-3 text-xs">
-                          <span className="w-32 shrink-0 text-muted">{criterion.name}</span>
-                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-edge">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-teal to-azure"
-                              style={{ width: `${(criterion.score / criterion.max) * 100}%` }}
-                            />
-                          </div>
-                          <span className="font-mono">
-                            {criterion.score}/{criterion.max}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </section>
-          );
-        })}
+          {tab === "material" && (
+            <TeacherMaterial lesson={lesson} assignments={assignments} onGraded={refresh} />
+          )}
+          {tab === "practice" && <LiveWorkspace session={session} />}
+          {tab === "analysis" && <LessonAnalysis results={results} />}
+        </div>
       </div>
     </div>
   );

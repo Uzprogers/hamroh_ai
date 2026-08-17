@@ -3,6 +3,8 @@ import { useI18n } from "../../i18n/i18n";
 import {
   SIMLI_API_KEY,
   SIMLI_FACE_ID,
+  SIMLI_FLUSH_MS,
+  SIMLI_FRAME_BYTES,
   SIMLI_MAX_IDLE_SECONDS,
   SIMLI_MAX_SESSION_SECONDS,
   SIMLI_MODEL,
@@ -31,11 +33,42 @@ export const SimliAvatar = forwardRef<AvatarHandle, SimliAvatarProps>(function S
   const clientRef = useRef<SimliSession | null>(null);
   const [status, setStatus] = useState<AvatarStatus>("off");
 
+  const tailRef = useRef<Uint8Array>(new Uint8Array(0));
+  const flushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useImperativeHandle(
     ref,
     () => ({
-      push: (pcm) => clientRef.current?.sendAudioData(new Uint8Array(pcm)),
-      clear: () => clientRef.current?.ClearBuffer(),
+      push: (pcm) => {
+        const client = clientRef.current;
+        if (!client) return;
+
+        const merged = new Uint8Array(tailRef.current.length + pcm.byteLength);
+        merged.set(tailRef.current, 0);
+        merged.set(new Uint8Array(pcm), tailRef.current.length);
+
+        let offset = 0;
+        while (merged.length - offset >= SIMLI_FRAME_BYTES) {
+          client.sendAudioData(merged.slice(offset, offset + SIMLI_FRAME_BYTES));
+          offset += SIMLI_FRAME_BYTES;
+        }
+        tailRef.current = merged.slice(offset);
+
+        if (flushRef.current) clearTimeout(flushRef.current);
+        flushRef.current = setTimeout(() => {
+          const tail = tailRef.current;
+          tailRef.current = new Uint8Array(0);
+          if (!tail.length || !clientRef.current) return;
+          const padded = new Uint8Array(SIMLI_FRAME_BYTES);
+          padded.set(tail, 0);
+          clientRef.current.sendAudioData(padded);
+        }, SIMLI_FLUSH_MS);
+      },
+      clear: () => {
+        if (flushRef.current) clearTimeout(flushRef.current);
+        tailRef.current = new Uint8Array(0);
+        clientRef.current?.ClearBuffer();
+      },
     }),
     [],
   );

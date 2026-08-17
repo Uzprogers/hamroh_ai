@@ -64,6 +64,14 @@ export default {
           "0%, 100%": { transform: "translateY(0)", opacity: "0.4" },
           "50%": { transform: "translateY(152px)", opacity: "1" },
         },
+        orbit: {
+          from: { transform: "rotate(0deg) translateX(30px) rotate(0deg)" },
+          to: { transform: "rotate(360deg) translateX(30px) rotate(-360deg)" },
+        },
+        buildBar: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(220%)" },
+        },
       },
       animation: {
         rise: "rise .5s cubic-bezier(.2,.8,.2,1) both",
@@ -76,6 +84,8 @@ export default {
         driftC: "driftC 38s ease-in-out infinite",
         glyphFloat: "glyphFloat 20s ease-in-out infinite",
         scanLine: "scanLine 2.4s ease-in-out infinite",
+        orbit: "orbit 3.2s linear infinite",
+        buildBar: "buildBar 1.6s ease-in-out infinite",
       },
     },
   },

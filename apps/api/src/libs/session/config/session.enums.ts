@@ -9,6 +9,8 @@ export enum SessionState {
   LISTENING = "LISTENING",
   THINKING = "THINKING",
   SPEAKING = "SPEAKING",
+  BUILDING = "BUILDING",
+  CHECKING = "CHECKING",
 }
 
 export enum SessionFocusKind {
@@ -22,4 +24,9 @@ export enum PanelCardType {
   EXERCISE = "EXERCISE",
   SPEAKING_REVIEW = "SPEAKING_REVIEW",
   STUDY_PLAN = "STUDY_PLAN",
+  TOPIC_RECAP = "TOPIC_RECAP",
 }
+
+export const BUILDING_TOOLS = ["create_exercise", "explain_topic"];
+
+export const EXERCISE_PASS_PERCENT = 50;
