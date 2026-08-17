@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - hamroh-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      YANDEX_SERVICE_ACCOUNT_KEY_PATH: /run/secrets/yandex-key.json
+    volumes:
+      - ${YANDEX_KEY_PATH}:/run/secrets/yandex-key.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: ${PUBLIC_URL}
+        VITE_WS_URL: ${PUBLIC_URL}
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+        VITE_SIMLI_API_KEY: ${SIMLI_API_KEY}
+        VITE_SIMLI_FACE_ID: ${SIMLI_FACE_ID}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8210}:80"
+    depends_on:
+      - api
+
+volumes:
+  hamroh-db:

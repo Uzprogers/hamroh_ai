@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+**/dist
+**/.vite
+.git
+.github
+docs
+.superpowers
+.claude
+*.log
+.env
+.env.*
+**/.env
+**/.env.*
