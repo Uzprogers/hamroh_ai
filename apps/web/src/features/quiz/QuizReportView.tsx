@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { MathText } from "../../components/MathText";
 import { NavIcon } from "../../components/NavIcon";
 import { StatRing } from "../../components/StatRing";
@@ -121,6 +122,14 @@ export function QuizReportView({ report }: { report: QuizReport }) {
 
           <StatRing percent={accuracyOf(attempt)} label={t("quiz.accuracy")} />
         </div>
+
+        <Link
+          to={`/session?quiz=${attempt.session_id}`}
+          className="btn-primary relative mt-6 w-full sm:w-auto"
+        >
+          <NavIcon name="spark" className="h-4 w-4" />
+          {t("session.discuss.quiz")}
+        </Link>
 
         <div className="relative mt-6 grid gap-3 sm:grid-cols-4">
           <Tile

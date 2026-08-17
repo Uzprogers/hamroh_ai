@@ -11,6 +11,11 @@ export enum SessionState {
   SPEAKING = "SPEAKING",
 }
 
+export enum SessionFocusKind {
+  LESSON = "LESSON",
+  QUIZ = "QUIZ",
+}
+
 export enum PanelCardType {
   RESULTS = "RESULTS",
   MISTAKES = "MISTAKES",

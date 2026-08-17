@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { MathText } from "../../components/MathText";
+import { NavIcon } from "../../components/NavIcon";
 import { useI18n } from "../../i18n/i18n";
 import type { TranslationKey } from "../../i18n/dictionary";
 import type { Assignment, Grade, Lesson } from "../../lib/types";
@@ -53,9 +54,16 @@ export function StudentLessonPage() {
         ← {t("student.title")}
       </Link>
 
-      <section className="surface animate-rise p-7">
-        <h1 className="font-display text-3xl font-extrabold">{lesson.topic}</h1>
-        <p className="mt-2 text-muted">{lesson.objective}</p>
+      <section className="surface animate-rise relative overflow-hidden p-7">
+        <span className="pointer-events-none absolute -right-24 -top-28 h-64 w-64 rounded-full bg-gradient-to-br from-teal/25 to-azure/20 blur-3xl" />
+
+        <h1 className="relative text-start font-display text-3xl font-extrabold">{lesson.topic}</h1>
+        <p className="relative mt-2 text-start text-muted">{lesson.objective}</p>
+
+        <Link to={`/session?lesson=${lesson.id}`} className="btn-primary relative mt-6">
+          <NavIcon name="spark" className="h-4 w-4" />
+          {t("session.discuss.lesson")}
+        </Link>
       </section>
 
       <div className="space-y-5">

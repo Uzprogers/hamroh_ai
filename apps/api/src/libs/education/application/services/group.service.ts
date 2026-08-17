@@ -174,6 +174,13 @@ export class GroupService {
     if (!linked) throw new ForbiddenException("STUDENT_NOT_IN_GROUP");
   }
 
+  async assertMembership(studentId: string, groupId: string): Promise<void> {
+    const member = await this.memberRepo.exists({
+      where: { group_id: groupId, student_id: studentId },
+    });
+    if (!member) throw new ForbiddenException("NOT_GROUP_MEMBER");
+  }
+
   private async link(groupId: string, studentId: string, source: MemberSource): Promise<void> {
     await this.memberRepo.manager.transaction(async (manager) => {
       await manager

@@ -252,6 +252,10 @@ export function StudentQuizPage() {
               <NavIcon name="stats" className="h-4 w-4" />
               {t("quiz.report.open")}
             </Link>
+            <Link to={`/session?quiz=${summary.id}`} className="btn-ghost">
+              <NavIcon name="spark" className="h-4 w-4" />
+              {t("session.discuss.quiz")}
+            </Link>
             <Link to="/" className="btn-ghost">
               {t("student.title")}
             </Link>

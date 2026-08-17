@@ -43,7 +43,19 @@ export class ResultsService {
   ) {}
 
   async studentResults(studentId: string, limit = 20): Promise<StudentResult[]> {
-    const rows = await this.submissionRepo
+    return this.collect(studentId, null, limit);
+  }
+
+  async lessonResults(studentId: string, lessonId: string): Promise<StudentResult[]> {
+    return this.collect(studentId, lessonId, 20);
+  }
+
+  private async collect(
+    studentId: string,
+    lessonId: string | null,
+    limit: number,
+  ): Promise<StudentResult[]> {
+    const query = this.submissionRepo
       .createQueryBuilder("s")
       .innerJoin("assignments", "a", "a.id = s.assignment_id")
       .innerJoin("lessons", "l", "l.id = a.lesson_id")
@@ -67,8 +79,11 @@ export class ResultsService {
       ])
       .where("s.student_id = :studentId", { studentId })
       .orderBy("s.submitted_at", "DESC")
-      .limit(limit)
-      .getRawMany();
+      .limit(limit);
+
+    if (lessonId) query.andWhere("a.lesson_id = :lessonId", { lessonId });
+
+    const rows = await query.getRawMany();
 
     return rows.map((r) => ({
       submission_id: r.submission_id,

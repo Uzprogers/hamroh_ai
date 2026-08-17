@@ -4,7 +4,8 @@ import { YandexSttService } from "../../speech/infrastructure/yandex-stt.service
 import { YandexTtsService } from "../../speech/infrastructure/yandex-tts.service";
 import { ToolsService } from "./services/tools.service";
 import { SentenceBuffer } from "./sentence-buffer";
-import { buildSessionPrompt, StudentContext } from "./session-prompt";
+import { buildSessionPrompt, openingInstruction, StudentContext } from "./session-prompt";
+import { SessionFocus } from "./types/session-focus.types";
 import { MessageSender, SessionState } from "../config/session.enums";
 
 const MAX_TOOL_ROUNDS = 3;
@@ -31,6 +32,7 @@ export class SessionPipeline {
 
   constructor(
     private readonly student: StudentContext & { id: string },
+    private readonly focus: SessionFocus | null,
     private readonly deps: {
       stt: YandexSttService;
       tts: YandexTtsService;
@@ -39,7 +41,7 @@ export class SessionPipeline {
     },
     private readonly events: PipelineEvents,
   ) {
-    this.systemPrompt = buildSessionPrompt(student);
+    this.systemPrompt = buildSessionPrompt(student, focus);
   }
 
   feedAudio(chunk: Buffer): void {
@@ -78,9 +80,7 @@ export class SessionPipeline {
 
   async openingTurn(): Promise<void> {
     if (this.disposed || this.busy) return;
-    await this.runTurn(
-      "[SYSTEM] The session just started. Greet the student and open with what their recent work shows.",
-    );
+    await this.runTurn(openingInstruction(this.focus));
   }
 
   dispose(): void {

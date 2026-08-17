@@ -10,6 +10,7 @@ import { LessonOrmEntity, PlanStep } from "../../infrastructure/typeorm/lesson.o
 import { AssignmentOrmEntity, Criterion } from "../../infrastructure/typeorm/assignment.orm-entity";
 import { GroupOrmEntity } from "../../infrastructure/typeorm/group.orm-entity";
 import { LlmService } from "../../../agent/infrastructure/llm.service";
+import { GroupService } from "./group.service";
 import { AssignmentType, LessonStatus } from "../../config/education.enums";
 import { CreateLessonDto } from "../dto/create-lesson.dto";
 import { Locale } from "../../../../core/i18n/locale.enum";
@@ -62,6 +63,7 @@ export class LessonService {
     @InjectRepository(AssignmentOrmEntity)
     private readonly assignmentRepo: Repository<AssignmentOrmEntity>,
     @InjectRepository(GroupOrmEntity) private readonly groupRepo: Repository<GroupOrmEntity>,
+    private readonly groupService: GroupService,
     private readonly ai: LlmService,
   ) {}
 
@@ -153,6 +155,7 @@ export class LessonService {
     const lesson = await this.lessonRepo.findOne({ where: { id: lessonId } });
     if (!lesson) throw new NotFoundException("LESSON_NOT_FOUND");
     if (isTeacher && lesson.teacher_id !== userId) throw new ForbiddenException("NOT_LESSON_OWNER");
+    if (!isTeacher) await this.groupService.assertMembership(userId, lesson.group_id);
 
     const assignments = await this.assignmentRepo.find({
       where: { lesson_id: lesson.id },

@@ -17,8 +17,10 @@ import { YandexSttService } from "../../speech/infrastructure/yandex-stt.service
 import { YandexTtsService } from "../../speech/infrastructure/yandex-tts.service";
 import { SessionPipeline } from "../application/session-pipeline";
 import { SessionService } from "../application/services/session.service";
+import { SessionFocusService } from "../application/services/session-focus.service";
 import { ToolsService } from "../application/services/tools.service";
-import { MessageSender, SessionState } from "../config/session.enums";
+import { FocusRequest, SessionFocus } from "../application/types/session-focus.types";
+import { MessageSender, SessionFocusKind, SessionState } from "../config/session.enums";
 
 interface LiveSession {
   studentId: string;
@@ -38,6 +40,7 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
   constructor(
     private readonly jwtService: JwtService,
     private readonly sessionService: SessionService,
+    private readonly focusService: SessionFocusService,
     private readonly toolsService: ToolsService,
     private readonly stt: YandexSttService,
     private readonly tts: YandexTtsService,
@@ -71,17 +74,19 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
   @SubscribeMessage("session:start")
   async start(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { lesson_id?: string },
+    @MessageBody() body: FocusRequest,
   ): Promise<void> {
     const studentId = client.data.userId as string;
     if (!studentId || this.live.has(client.id)) return;
 
     try {
       const context = await this.sessionService.studentContext(studentId);
-      const session = await this.sessionService.open(studentId, body?.lesson_id ?? null);
+      const focus = await this.resolveFocus(client, studentId, body);
+      const session = await this.sessionService.open(studentId, this.lessonOf(focus));
 
       const pipeline = new SessionPipeline(
         context,
+        focus,
         { stt: this.stt, tts: this.tts, ai: this.ai, tools: this.toolsService },
         {
           state: (state) => client.emit("state", { state }),
@@ -98,7 +103,11 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
       );
 
       this.live.set(client.id, { studentId, sessionId: session.id, pipeline });
-      client.emit("session:ready", { session_id: session.id, locale: context.locale });
+      client.emit("session:ready", {
+        session_id: session.id,
+        locale: context.locale,
+        focus: this.focusService.headline(focus),
+      });
       client.emit("state", { state: SessionState.THINKING });
 
       await pipeline.openingTurn();
@@ -106,6 +115,24 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
       this.logger.error(`session:start failed: ${(err as Error).message}`);
       client.emit("session:error", { message: "SESSION_START_FAILED" });
     }
+  }
+
+  private async resolveFocus(
+    client: Socket,
+    studentId: string,
+    body: FocusRequest,
+  ): Promise<SessionFocus | null> {
+    try {
+      return await this.focusService.resolve(studentId, body ?? {});
+    } catch (err) {
+      this.logger.warn(`focus rejected for ${studentId}: ${(err as Error).message}`);
+      client.emit("session:error", { message: "FOCUS_UNAVAILABLE" });
+      return null;
+    }
+  }
+
+  private lessonOf(focus: SessionFocus | null): string | null {
+    return focus?.kind === SessionFocusKind.LESSON ? focus.id : null;
   }
 
   @SubscribeMessage("audio:chunk")
