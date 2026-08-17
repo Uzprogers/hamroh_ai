@@ -100,16 +100,18 @@ export function LandingPage() {
       </div>
 
       <header className="sticky top-0 z-30 border-b border-edge/40 bg-ink/70 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <Logo size={30} />
-            <span className="font-display text-lg font-extrabold brand-text">Hamroh AI</span>
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-5 sm:py-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <Logo size={28} />
+            <span className="whitespace-nowrap font-display text-base font-extrabold brand-text sm:text-lg">
+              Hamroh AI
+            </span>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <ThemeToggle />
             <LanguageSwitcher />
-            <Link to="/login" className="btn-primary px-5 py-2.5 text-sm">
+            <Link to="/login" className="btn-primary whitespace-nowrap px-3.5 py-2.5 text-sm sm:px-5">
               {t("landing.nav.login")}
               <span aria-hidden="true">→</span>
             </Link>

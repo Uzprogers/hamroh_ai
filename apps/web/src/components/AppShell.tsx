@@ -84,20 +84,22 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="relative min-h-full">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px] grid-floor" />
 
-      <header className="relative z-20 mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-6">
-        <Link to="/" className="flex items-center gap-3">
-          <Logo />
-          <span className="font-display text-lg font-extrabold brand-text">Hamroh AI</span>
+      <header className="relative z-20 mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-4 sm:gap-4 sm:px-5 sm:py-6">
+        <Link to="/" className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <Logo size={30} />
+          <span className="whitespace-nowrap font-display text-base font-extrabold brand-text sm:text-lg">
+            Hamroh AI
+          </span>
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <ThemeToggle />
           <LanguageSwitcher />
           <UserMenu />
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto w-full max-w-6xl px-5 pb-20">{children}</main>
+      <main className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-20 sm:px-5">{children}</main>
     </div>
   );
 }
