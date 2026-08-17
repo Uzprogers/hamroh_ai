@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { toolCardType, type PanelEntry } from "./PanelCard";
-import { AUDIO_BUFFER_MAX_BYTES, SIMLI_API_KEY } from "./avatar.const";
+import { SIMLI_API_KEY } from "./avatar.const";
 import type { AudioRoute, AvatarHandle, AvatarStatus } from "./avatar.types";
 import type {
   ExerciseResult,
   FocusHeadline,
   FocusRequest,
   SessionLine,
+  SessionPhase,
   SessionState,
 } from "./session.types";
 import { MicRecorder, PcmPlayer } from "../../lib/audio";
@@ -25,12 +26,13 @@ export function useSession(request: FocusRequest) {
   const playerRef = useRef(new PcmPlayer());
   const micRef = useRef(new MicRecorder());
   const avatarRef = useRef<AvatarHandle>(null);
-  const avatarStatusRef = useRef<AvatarStatus>("off");
-  const routeRef = useRef<AudioRoute>("pending");
-  const bufferRef = useRef<ArrayBuffer[]>([]);
-  const bufferedRef = useRef(0);
+  const routeRef = useRef<AudioRoute>("player");
+  const readyRef = useRef<(() => void) | null>(null);
+  const settledRef = useRef(false);
+  const phaseRef = useRef<SessionPhase>("idle");
   const lineId = useRef(0);
 
+  const [phase, setPhase] = useState<SessionPhase>("idle");
   const [connected, setConnected] = useState(false);
   const [state, setState] = useState<SessionState>("IDLE");
   const [lines, setLines] = useState<SessionLine[]>([]);
@@ -61,53 +63,43 @@ export function useSession(request: FocusRequest) {
     setLines((prev) => [...prev, { id: lineId.current, who, text }]);
   }, []);
 
-  const flush = useCallback((route: Exclude<AudioRoute, "pending">) => {
-    routeRef.current = route;
-    const queued = bufferRef.current;
-    bufferRef.current = [];
-    bufferedRef.current = 0;
-    for (const pcm of queued) {
-      if (route === "avatar") avatarRef.current?.push(pcm);
-      else playerRef.current.enqueue(pcm);
-    }
+  const routeAudio = useCallback((pcm: ArrayBuffer) => {
+    if (routeRef.current === "avatar") avatarRef.current?.push(pcm);
+    else playerRef.current.enqueue(pcm);
   }, []);
 
-  const routeAudio = useCallback(
-    (pcm: ArrayBuffer) => {
-      if (routeRef.current === "avatar") {
-        avatarRef.current?.push(pcm);
-        return;
-      }
-      if (routeRef.current === "player") {
-        playerRef.current.enqueue(pcm);
-        return;
-      }
-
-      bufferRef.current.push(pcm);
-      bufferedRef.current += pcm.byteLength;
-      if (bufferedRef.current >= AUDIO_BUFFER_MAX_BYTES) flush("player");
-    },
-    [flush],
-  );
+  const settle = useCallback((route: AudioRoute) => {
+    settledRef.current = true;
+    routeRef.current = route;
+    readyRef.current?.();
+    readyRef.current = null;
+  }, []);
 
   const onAvatarStatus = useCallback(
     (next: AvatarStatus) => {
-      avatarStatusRef.current = next;
       setAvatarStatus(next);
-      if (routeRef.current !== "pending") return;
-      if (next === "live") flush("avatar");
-      if (next === "failed") flush("player");
+      if (next === "live") settle("avatar");
+      if (next === "failed") settle("player");
     },
-    [flush],
+    [settle],
   );
 
   const connect = useCallback(async () => {
-    if (socketRef.current) return;
+    if (socketRef.current || phaseRef.current !== "idle") return;
     setError(null);
-    routeRef.current = avatarEnabled ? "pending" : "player";
-    bufferRef.current = [];
-    bufferedRef.current = 0;
     await playerRef.current.resume();
+
+    if (avatarEnabled && !settledRef.current) {
+      phaseRef.current = "avatar";
+      setPhase("avatar");
+      await new Promise<void>((resolve) => {
+        readyRef.current = resolve;
+      });
+      if (phaseRef.current !== "avatar") return;
+    }
+
+    phaseRef.current = "live";
+    setPhase("live");
 
     const socket = io(`${WS_URL}/session`, { auth: { token }, transports: ["websocket"] });
     socketRef.current = socket;
@@ -161,6 +153,10 @@ export function useSession(request: FocusRequest) {
     socketRef.current = null;
     micRef.current.stop();
     avatarRef.current?.clear();
+    phaseRef.current = "idle";
+    readyRef.current?.();
+    readyRef.current = null;
+    setPhase("idle");
     setConnected(false);
     setHolding(false);
     setState("IDLE");
@@ -203,6 +199,7 @@ export function useSession(request: FocusRequest) {
   }, []);
 
   return {
+    phase,
     connected,
     state,
     building,

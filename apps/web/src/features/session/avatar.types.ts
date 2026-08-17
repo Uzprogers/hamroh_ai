@@ -1,4 +1,4 @@
-export type AudioRoute = "pending" | "avatar" | "player";
+export type AudioRoute = "avatar" | "player";
 
 export type AvatarStatus = "off" | "starting" | "live" | "failed";
 

@@ -1,5 +1,4 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { useI18n } from "../../i18n/i18n";
 import {
   SIMLI_API_KEY,
   SIMLI_FACE_ID,
@@ -9,7 +8,6 @@ import {
   SIMLI_MAX_SESSION_SECONDS,
   SIMLI_MODEL,
   SIMLI_START_TIMEOUT_MS,
-  SIMLI_VIDEO_WAIT_MS,
 } from "./avatar.const";
 import type { AvatarHandle, AvatarStatus } from "./avatar.types";
 
@@ -20,23 +18,20 @@ interface SimliAvatarProps {
 }
 
 interface SimliSession {
+  on: (event: "speaking" | "silent", callback: () => void) => void;
   sendAudioData: (data: Uint8Array) => void;
   ClearBuffer: () => void;
   stop: () => Promise<void>;
 }
 
-function waitForVideo(video: HTMLVideoElement): Promise<void> {
+function waitForVideoData(video: HTMLVideoElement): Promise<void> {
   if (video.readyState >= 2) return Promise.resolve();
 
   return new Promise((resolve) => {
     const done = () => {
-      clearTimeout(timer);
-      video.removeEventListener("playing", done);
       video.removeEventListener("loadeddata", done);
       resolve();
     };
-    const timer = setTimeout(done, SIMLI_VIDEO_WAIT_MS);
-    video.addEventListener("playing", done);
     video.addEventListener("loadeddata", done);
   });
 }
@@ -45,11 +40,11 @@ export const SimliAvatar = forwardRef<AvatarHandle, SimliAvatarProps>(function S
   { active, speaking, onStatus },
   ref,
 ) {
-  const { t } = useI18n();
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const clientRef = useRef<SimliSession | null>(null);
   const [status, setStatus] = useState<AvatarStatus>("off");
+  const [talking, setTalking] = useState(false);
 
   const tailRef = useRef<Uint8Array>(new Uint8Array(0));
   const flushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -124,7 +119,16 @@ export const SimliAvatar = forwardRef<AvatarHandle, SimliAvatarProps>(function S
         if (!alive) return;
 
         const client = new SimliClient(session_token, video, audio, null, undefined, "livekit");
-        await client.start();
+        client.on("speaking", () => alive && setTalking(true));
+        client.on("silent", () => alive && setTalking(false));
+
+        const started = client.start();
+        started.catch(() => {
+          clearTimeout(guard);
+          move("failed");
+        });
+
+        await Promise.race([started, waitForVideoData(video)]);
         if (!alive) {
           void client.stop();
           return;
@@ -132,8 +136,6 @@ export const SimliAvatar = forwardRef<AvatarHandle, SimliAvatarProps>(function S
 
         clientRef.current = client;
         void audio.play().catch(() => undefined);
-        await waitForVideo(video);
-        if (!alive) return;
 
         clearTimeout(guard);
         move("live");
@@ -149,14 +151,18 @@ export const SimliAvatar = forwardRef<AvatarHandle, SimliAvatarProps>(function S
       void clientRef.current?.stop().catch(() => undefined);
       clientRef.current = null;
       setStatus("off");
+      setTalking(false);
     };
   }, [active, onStatus]);
+
+  const live = status === "live";
+  const glowing = talking || speaking;
 
   return (
     <div className="relative h-full w-full">
       <span
         className={`pointer-events-none absolute inset-x-8 top-6 bottom-10 rounded-[40%] bg-gradient-to-br from-teal/30 to-azure/25 blur-3xl transition-opacity duration-500 ${
-          speaking ? "opacity-90" : "opacity-50"
+          !live ? "opacity-0" : glowing ? "opacity-90" : "opacity-50"
         }`}
       />
 
@@ -166,7 +172,7 @@ export const SimliAvatar = forwardRef<AvatarHandle, SimliAvatarProps>(function S
         playsInline
         muted
         className={`relative h-full w-full object-cover transition-opacity duration-700 ${
-          status === "live" ? "opacity-100" : "opacity-0"
+          live ? "opacity-100" : "opacity-0"
         }`}
         style={{
           maskImage:
@@ -176,17 +182,6 @@ export const SimliAvatar = forwardRef<AvatarHandle, SimliAvatarProps>(function S
         }}
       />
       <audio ref={audioRef} autoPlay />
-
-      {status === "starting" && (
-        <div className="absolute inset-0 grid place-items-center">
-          <div className="flex flex-col items-center gap-3">
-            <span className="h-12 w-12 animate-spin rounded-full border-2 border-edge border-t-teal" />
-            <span className="text-xs uppercase tracking-widest text-muted">
-              {t("session.avatar.loading")}
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   );
 });

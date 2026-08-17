@@ -8,9 +8,7 @@ export const SIMLI_MODEL = "fasttalk" as const;
 
 export const SIMLI_FRAME_BYTES = 6000;
 export const SIMLI_FLUSH_MS = 180;
-export const SIMLI_START_TIMEOUT_MS = 9000;
-export const SIMLI_VIDEO_WAIT_MS = 4000;
-export const AUDIO_BUFFER_MAX_BYTES = 480000;
+export const SIMLI_START_TIMEOUT_MS = 25000;
 
 export const HOLO_PARTICLES = 620;
 export const HOLO_SPIN = 0.5;

@@ -29,22 +29,31 @@ export function SessionConsole({ session }: { session: SessionApi }) {
     CHECKING: t("session.checking"),
   }[session.state];
 
-  const showAvatar =
-    session.avatarEnabled && session.connected && session.avatarStatus !== "failed";
+  const warming = session.phase === "avatar";
+  const avatarLive = session.avatarStatus === "live";
+  const showAvatar = session.avatarEnabled && session.avatarStatus !== "failed";
   const avatarFailed = session.avatarEnabled && session.connected && session.avatarStatus === "failed";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="relative min-h-[300px] flex-1 overflow-hidden">
-        {showAvatar ? (
-          <SimliAvatar
-            ref={session.avatarRef}
-            active={session.connected}
-            speaking={session.state === "SPEAKING"}
-            onStatus={session.onAvatarStatus}
-          />
-        ) : (
+      <div className="relative min-h-[300px] flex-1 overflow-hidden bg-[#04070F]">
+        <div
+          className={`absolute inset-0 transition-opacity duration-700 ${
+            avatarLive ? "opacity-0" : "opacity-100"
+          }`}
+        >
           <HologramAvatar level={session.level} state={session.state} />
+        </div>
+
+        {showAvatar && (
+          <div className="absolute inset-0">
+            <SimliAvatar
+              ref={session.avatarRef}
+              active={session.avatarEnabled}
+              speaking={session.state === "SPEAKING"}
+              onStatus={session.onAvatarStatus}
+            />
+          </div>
         )}
 
         <span className="chip absolute left-4 top-4 backdrop-blur">
@@ -145,8 +154,16 @@ export function SessionConsole({ session }: { session: SessionApi }) {
             </div>
           </>
         ) : (
-          <button type="button" className="btn-primary w-full" onClick={session.connect}>
-            {t("session.connect")}
+          <button
+            type="button"
+            className="btn-primary w-full disabled:opacity-60"
+            disabled={warming}
+            onClick={session.connect}
+          >
+            {warming && (
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink/30 border-t-ink" />
+            )}
+            {t(warming ? "session.avatar.warming" : "session.connect")}
           </button>
         )}
 

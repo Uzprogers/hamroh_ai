@@ -6,6 +6,8 @@ export type SessionState =
   | "BUILDING"
   | "CHECKING";
 
+export type SessionPhase = "idle" | "avatar" | "live";
+
 export interface FocusHeadline {
   kind: "LESSON" | "QUIZ";
   title: string;
