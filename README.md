@@ -13,6 +13,8 @@ O'qituvchining tekshiruv vaqtini qaytaradigan va o'quvchi bilan jonli ovozda gap
 [![Tillar](https://img.shields.io/badge/tillar-uz%20%C2%B7%20ru%20%C2%B7%20en-2AD5C3?style=flat-square)](#-uch-til)
 [![Litsenziya](https://img.shields.io/badge/litsenziya-MIT-5586FD?style=flat-square)](LICENSE)
 
+[**📊 Taqdimot — Xakaton 2026 (PDF)**](Hamroh-AI-Xakaton-2026.pdf)
+
 </div>
 
 ---
