@@ -1,20 +1,12 @@
 import { BuildingCard } from "./BuildingCard";
 import { ExerciseRunner } from "./ExerciseRunner";
 import { PanelCard } from "./PanelCard";
-import { useI18n } from "../../i18n/i18n";
+import { WorkspaceIntro } from "./WorkspaceIntro";
 import type { SessionApi } from "./useSession";
 import type { ExercisePayload } from "../../lib/types";
 
 export function LiveWorkspace({ session }: { session: SessionApi }) {
-  const { t } = useI18n();
-
-  if (!session.panel.length) {
-    return (
-      <div className="surface grid min-h-[220px] place-items-center p-8 text-center text-sm text-muted">
-        {t(session.connected ? "session.panel.empty" : "session.panel.start")}
-      </div>
-    );
-  }
+  if (!session.panel.length) return <WorkspaceIntro connected={session.connected} />;
 
   return (
     <div className="space-y-4">

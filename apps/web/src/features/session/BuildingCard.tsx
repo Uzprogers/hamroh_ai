@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { BUILD_ROWS, BUILD_STAGES, BUILD_STAGE_MS } from "./session.const";
 import { useI18n } from "../../i18n/i18n";
 import type { TranslationKey } from "../../i18n/dictionary";
 
@@ -12,6 +14,15 @@ const TOOL_LABEL: Record<string, TranslationKey> = {
 
 export function BuildingCard({ tool }: { tool: string }) {
   const { t } = useI18n();
+  const [stage, setStage] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(
+      () => setStage((current) => Math.min(current + 1, BUILD_STAGES.length - 1)),
+      BUILD_STAGE_MS,
+    );
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <article className="surface animate-rise relative overflow-hidden p-6">
@@ -36,18 +47,43 @@ export function BuildingCard({ tool }: { tool: string }) {
           <div className="text-start font-display text-base font-extrabold">
             {t(TOOL_LABEL[tool] ?? "build.generic")}
           </div>
-          <p className="mt-1 text-start text-sm text-muted">{t("build.wait")}</p>
+          <p key={stage} className="mt-1 animate-rise text-start text-sm text-teal">
+            {t(BUILD_STAGES[stage])}
+          </p>
         </div>
       </div>
 
-      <div className="relative mt-5 h-1.5 overflow-hidden rounded-full bg-edge">
-        <span className="block h-full w-1/3 animate-buildBar rounded-full bg-gradient-to-r from-teal via-azure to-teal" />
+      <div className="relative mt-5 flex gap-1.5">
+        {BUILD_STAGES.map((key, index) => (
+          <span
+            key={key}
+            className={`h-1 flex-1 overflow-hidden rounded-full transition-colors duration-500 ${
+              index <= stage ? "bg-gradient-to-r from-teal to-azure" : "bg-edge"
+            }`}
+          >
+            {index === stage && (
+              <span className="block h-full w-1/2 animate-buildBar rounded-full bg-paper/40" />
+            )}
+          </span>
+        ))}
       </div>
 
-      <div className="relative mt-4 space-y-2">
-        <div className="skeleton h-3 w-3/4" />
-        <div className="skeleton h-3 w-full" />
-        <div className="skeleton h-3 w-2/3" />
+      <div className="relative mt-5 space-y-3">
+        {BUILD_ROWS.map((width, index) => (
+          <div
+            key={width}
+            className="flex animate-rise items-start gap-3"
+            style={{ animationDelay: `${index * 160}ms`, animationFillMode: "backwards" }}
+          >
+            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg border border-edge bg-panel/60 font-mono text-[10px] text-muted">
+              {index + 1}
+            </span>
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="skeleton h-3" style={{ width }} />
+              <div className="skeleton h-9 w-full rounded-xl" />
+            </div>
+          </div>
+        ))}
       </div>
     </article>
   );
