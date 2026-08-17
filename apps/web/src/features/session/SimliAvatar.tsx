@@ -9,6 +9,7 @@ import {
   SIMLI_MAX_SESSION_SECONDS,
   SIMLI_MODEL,
   SIMLI_START_TIMEOUT_MS,
+  SIMLI_VIDEO_WAIT_MS,
 } from "./avatar.const";
 import type { AvatarHandle, AvatarStatus } from "./avatar.types";
 
@@ -22,6 +23,22 @@ interface SimliSession {
   sendAudioData: (data: Uint8Array) => void;
   ClearBuffer: () => void;
   stop: () => Promise<void>;
+}
+
+function waitForVideo(video: HTMLVideoElement): Promise<void> {
+  if (video.readyState >= 2) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      video.removeEventListener("playing", done);
+      video.removeEventListener("loadeddata", done);
+      resolve();
+    };
+    const timer = setTimeout(done, SIMLI_VIDEO_WAIT_MS);
+    video.addEventListener("playing", done);
+    video.addEventListener("loadeddata", done);
+  });
 }
 
 export const SimliAvatar = forwardRef<AvatarHandle, SimliAvatarProps>(function SimliAvatar(
@@ -115,6 +132,9 @@ export const SimliAvatar = forwardRef<AvatarHandle, SimliAvatarProps>(function S
 
         clientRef.current = client;
         void audio.play().catch(() => undefined);
+        await waitForVideo(video);
+        if (!alive) return;
+
         clearTimeout(guard);
         move("live");
       } catch {

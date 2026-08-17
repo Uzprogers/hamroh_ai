@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { toolCardType, type PanelEntry } from "./PanelCard";
-import { SIMLI_API_KEY } from "./avatar.const";
-import type { AvatarHandle, AvatarStatus } from "./avatar.types";
+import { AUDIO_BUFFER_MAX_BYTES, SIMLI_API_KEY } from "./avatar.const";
+import type { AudioRoute, AvatarHandle, AvatarStatus } from "./avatar.types";
 import type {
   ExerciseResult,
   FocusHeadline,
@@ -26,6 +26,9 @@ export function useSession(request: FocusRequest) {
   const micRef = useRef(new MicRecorder());
   const avatarRef = useRef<AvatarHandle>(null);
   const avatarStatusRef = useRef<AvatarStatus>("off");
+  const routeRef = useRef<AudioRoute>("pending");
+  const bufferRef = useRef<ArrayBuffer[]>([]);
+  const bufferedRef = useRef(0);
   const lineId = useRef(0);
 
   const [connected, setConnected] = useState(false);
@@ -38,6 +41,8 @@ export function useSession(request: FocusRequest) {
   const [level, setLevel] = useState(0);
   const [holding, setHolding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const avatarEnabled = Boolean(SIMLI_API_KEY);
 
   const lessonId = request.lesson_id;
   const quizId = request.quiz_session_id;
@@ -56,14 +61,52 @@ export function useSession(request: FocusRequest) {
     setLines((prev) => [...prev, { id: lineId.current, who, text }]);
   }, []);
 
-  const onAvatarStatus = useCallback((next: AvatarStatus) => {
-    avatarStatusRef.current = next;
-    setAvatarStatus(next);
+  const flush = useCallback((route: Exclude<AudioRoute, "pending">) => {
+    routeRef.current = route;
+    const queued = bufferRef.current;
+    bufferRef.current = [];
+    bufferedRef.current = 0;
+    for (const pcm of queued) {
+      if (route === "avatar") avatarRef.current?.push(pcm);
+      else playerRef.current.enqueue(pcm);
+    }
   }, []);
+
+  const routeAudio = useCallback(
+    (pcm: ArrayBuffer) => {
+      if (routeRef.current === "avatar") {
+        avatarRef.current?.push(pcm);
+        return;
+      }
+      if (routeRef.current === "player") {
+        playerRef.current.enqueue(pcm);
+        return;
+      }
+
+      bufferRef.current.push(pcm);
+      bufferedRef.current += pcm.byteLength;
+      if (bufferedRef.current >= AUDIO_BUFFER_MAX_BYTES) flush("player");
+    },
+    [flush],
+  );
+
+  const onAvatarStatus = useCallback(
+    (next: AvatarStatus) => {
+      avatarStatusRef.current = next;
+      setAvatarStatus(next);
+      if (routeRef.current !== "pending") return;
+      if (next === "live") flush("avatar");
+      if (next === "failed") flush("player");
+    },
+    [flush],
+  );
 
   const connect = useCallback(async () => {
     if (socketRef.current) return;
     setError(null);
+    routeRef.current = avatarEnabled ? "pending" : "player";
+    bufferRef.current = [];
+    bufferedRef.current = 0;
     await playerRef.current.resume();
 
     const socket = io(`${WS_URL}/session`, { auth: { token }, transports: ["websocket"] });
@@ -79,10 +122,7 @@ export function useSession(request: FocusRequest) {
     socket.on("state", ({ state: next }: { state: SessionState }) => setState(next));
     socket.on("transcript", ({ text }: { text: string }) => addLine("student", text));
     socket.on("reply", ({ text }: { text: string }) => addLine("hamroh", text));
-    socket.on("audio", (pcm: ArrayBuffer) => {
-      if (avatarStatusRef.current === "live") avatarRef.current?.push(pcm);
-      else playerRef.current.enqueue(pcm);
-    });
+    socket.on("audio", (pcm: ArrayBuffer) => routeAudio(pcm));
 
     socket.on("panel:pending", ({ call_id, tool }: { call_id: string; tool: string }) => {
       setPanel((prev) => [
@@ -113,7 +153,7 @@ export function useSession(request: FocusRequest) {
       setConnected(false);
       setState("IDLE");
     });
-  }, [token, addLine, start]);
+  }, [token, addLine, start, avatarEnabled, routeAudio]);
 
   const disconnect = useCallback(() => {
     socketRef.current?.emit("session:end");
@@ -176,7 +216,7 @@ export function useSession(request: FocusRequest) {
     holding,
     avatarRef,
     avatarStatus,
-    avatarEnabled: Boolean(SIMLI_API_KEY),
+    avatarEnabled,
     onAvatarStatus,
     connect,
     disconnect,
