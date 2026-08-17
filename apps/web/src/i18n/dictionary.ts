@@ -432,7 +432,7 @@ export const dictionary = {
     "student.feedback": "Izoh",
     "student.mistakes": "Xatolar",
     "student.empty.lessons": "Hozircha faol dars yo'q",
-    "student.empty.results": "Hali topshirilgan ish yo'q",
+    "student.empty.results": "Hali topshirilgan ish yo'q — birinchi topshiriqni bajarib, shu yerda ko'ring",
 
     "session.title": "Jonli sessiya",
     "session.connect": "Sessiyani boshlash",
@@ -931,7 +931,7 @@ export const dictionary = {
     "student.feedback": "Комментарий",
     "student.mistakes": "Ошибки",
     "student.empty.lessons": "Активных уроков пока нет",
-    "student.empty.results": "Пока нет сданных работ",
+    "student.empty.results": "Пока нет сданных работ — выполните первое задание, и оно появится здесь",
 
     "session.title": "Живая сессия",
     "session.connect": "Начать сессию",
@@ -1430,7 +1430,7 @@ export const dictionary = {
     "student.feedback": "Feedback",
     "student.mistakes": "Mistakes",
     "student.empty.lessons": "No active lessons yet",
-    "student.empty.results": "Nothing submitted yet",
+    "student.empty.results": "Nothing submitted yet — finish your first assignment and it'll show up here",
 
     "session.title": "Live session",
     "session.connect": "Start session",
