@@ -149,7 +149,9 @@ export class LessonService {
       .andWhere("l.status IN (:...statuses)", {
         statuses: [LessonStatus.ACTIVE, LessonStatus.CLOSED],
       })
-      .orderBy("l.created_at", "DESC")
+      .orderBy("CASE WHEN l.status = :active THEN 0 ELSE 1 END", "ASC")
+      .addOrderBy("l.created_at", "DESC")
+      .setParameter("active", LessonStatus.ACTIVE)
       .getMany();
   }
 

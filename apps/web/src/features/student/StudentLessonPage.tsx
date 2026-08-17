@@ -89,6 +89,12 @@ export function StudentLessonPage() {
             <p className="mt-2 max-w-2xl text-start text-muted">{lesson.objective}</p>
 
             <div className="mt-4 flex flex-wrap gap-2">
+              {lesson.status === "ACTIVE" && (
+                <span className="chip border-teal/50 bg-teal/10 text-teal">
+                  <span className="h-1.5 w-1.5 rounded-full bg-teal" />
+                  {t("lesson.status.ACTIVE")}
+                </span>
+              )}
               {teacher && (
                 <span className="chip">
                   <NavIcon name="user" className="h-3.5 w-3.5" />
@@ -101,9 +107,18 @@ export function StudentLessonPage() {
           </div>
 
           {!session.connected && (
-            <button type="button" className="btn-primary" onClick={session.connect}>
-              <NavIcon name="spark" className="h-4 w-4" />
-              {t("studio.start")}
+            <button
+              type="button"
+              className="btn-primary disabled:opacity-60"
+              disabled={session.phase === "avatar"}
+              onClick={session.connect}
+            >
+              {session.phase === "avatar" ? (
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink/30 border-t-ink" />
+              ) : (
+                <NavIcon name="spark" className="h-4 w-4" />
+              )}
+              {t(session.phase === "avatar" ? "session.avatar.warming" : "studio.start")}
             </button>
           )}
         </div>
