@@ -10,7 +10,9 @@
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/typeorm.config.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/typeorm.config.ts",
     "seed": "ts-node -r tsconfig-paths/register src/core/seed/seed.ts",
-    "test": "jest"
+    "test": "jest",
+    "fixture:school": "ts-node -r tsconfig-paths/register scripts/generate-school-fixture.ts",
+    "seed:school": "ts-node -r tsconfig-paths/register scripts/seed-school.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",

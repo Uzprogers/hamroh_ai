@@ -2,11 +2,15 @@
   "name": "hamroh-ai",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "api": "npm run start:dev --workspace=@hamroh/api",
     "web": "npm run dev --workspace=@hamroh/web",
     "migration:run": "npm run migration:run --workspace=@hamroh/api",
-    "seed": "npm run seed --workspace=@hamroh/api"
+    "seed": "npm run seed --workspace=@hamroh/api",
+    "fixture:school": "npm run fixture:school --workspace=@hamroh/api",
+    "seed:school": "npm run seed:school --workspace=@hamroh/api"
   }
 }

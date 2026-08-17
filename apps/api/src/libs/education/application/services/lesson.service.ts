@@ -146,7 +146,9 @@ export class LessonService {
       .createQueryBuilder("l")
       .innerJoin("group_members", "m", "m.group_id = l.group_id")
       .where("m.student_id = :studentId", { studentId })
-      .andWhere("l.status = :status", { status: LessonStatus.ACTIVE })
+      .andWhere("l.status IN (:...statuses)", {
+        statuses: [LessonStatus.ACTIVE, LessonStatus.CLOSED],
+      })
       .orderBy("l.created_at", "DESC")
       .getMany();
   }
